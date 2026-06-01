@@ -127,8 +127,8 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 <div id="login-page">
   <div class="login-box">
     <img src="logo.png" alt="NeuraHash" class="login-logo"/>
-    <div class="login-subtitle">Pool Portal — Investor Access</div>
-    <input type="password" id="token-input" class="login-input" placeholder="Access token" autocomplete="off"/>
+    <div class="login-subtitle">Pool Portal — Acceso Inversores</div>
+    <input type="password" id="token-input" class="login-input" placeholder="Token de acceso" autocomplete="off"/>
     <button class="login-btn" onclick="tryLogin()">Acceder →</button>
     <div class="login-error" id="login-err"></div>
   </div>
@@ -150,9 +150,9 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- HERO -->
     <div class="hero">
-      <div class="hero-label">NeuraHash Pool Portal · <span id="hero-date">—</span><span id="last-upd" style="margin-left:16px;color:rgba(255,255,255,.12)"></span></div>
-      <h1 class="hero-title">Mining Operations</h1>
-      <p class="hero-sub">Hydro Fleet (28 × S21 Hydro) + Standard Fleet (214 × S19) — 32,460 TH/s base</p>
+      <div class="hero-label">NeuraHash Pool Portal · <span id="hero-date">—</span><span id="timestamp" style="margin-left:16px;color:rgba(255,255,255,.12)"></span></div>
+      <h1 class="hero-title">Operaciones de Minería</h1>
+      <p class="hero-sub">Flota Hydro (28 × S21 Hydro) + Flota Standard (214 × S19) — 32.460 TH/s base</p>
     </div>
 
     <!-- KPI STRIP -->
@@ -181,9 +181,9 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab-btn active" onclick="setTab('overview',this)">Overview</button>
-      <button class="tab-btn" onclick="setTab('hydro',this)">Hydro Fleet</button>
-      <button class="tab-btn" onclick="setTab('standard',this)">Standard Fleet</button>
+      <button class="tab-btn active" onclick="setTab('overview',this)">Resumen</button>
+      <button class="tab-btn" onclick="setTab('hydro',this)">Flota Hydro</button>
+      <button class="tab-btn" onclick="setTab('standard',this)">Flota Standard</button>
       <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
     </div>
@@ -192,7 +192,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <div id="pane-overview" class="tab-pane active" style="margin-top:20px">
       <div class="g2" style="margin-top:0">
         <div class="fleet-card hydro">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace">⚡ Hydro Fleet — Antminer S21 Hydro</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace">⚡ Flota Hydro — Antminer S21 Hydro</div>
           <div class="fleet-hr cgold" id="ov-hydro-hr">—</div>
           <div class="fleet-sub" id="ov-hydro-status">—</div>
           <div class="fr"><span class="l">Máquinas</span><span class="v">28 × Antminer S21 Hydro</span></div>
@@ -203,7 +203,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
           <div class="fr"><span class="l">USD / mes (est.)</span><span class="v cgreen" id="ov-h-usd">—</span></div>
         </div>
         <div class="fleet-card std">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace">⛏ Standard Fleet — Antminer S19</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace">⛏ Flota Standard — Antminer S19</div>
           <div class="fleet-hr cgreen" id="ov-std-hr">—</div>
           <div class="fleet-sub" id="ov-std-status">—</div>
           <div class="fr"><span class="l">Máquinas</span><span class="v">214 × Antminer S19</span></div>
@@ -218,7 +218,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       <div class="card" style="margin-top:10px">
         <div class="card-title">Totales combinados</div>
         <div class="g4">
-          <div><div class="kpi-label">Hashrate total (live)</div><div style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums" id="ov-total-hr">—</div></div>
+          <div><div class="kpi-label">Hashrate total (en vivo)</div><div style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums" id="ov-total-hr">—</div></div>
           <div><div class="kpi-label">BTC bruto / día</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">6.0808 BTC</div></div>
           <div><div class="kpi-label">BTC bruto / mes (30d)</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">182.424 BTC</div></div>
           <div><div class="kpi-label">USD / mes (est.)</div><div style="font-size:20px;font-weight:800;color:#22c55e;font-variant-numeric:tabular-nums" id="ov-usd-month">—</div></div>
@@ -229,12 +229,12 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <!-- ── HYDRO FLEET ─────────────────────────────────────────── -->
     <div id="pane-hydro" class="tab-pane" style="margin-top:20px">
       <div class="g3" style="margin-top:0">
-        <div class="kpi-card"><div class="kpi-label">Hashrate Hydro Fleet</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hashrate Flota Hydro</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro</div></div>
         <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="hf-online">—</div><div class="kpi-sub">de 28 total</div></div>
         <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgold">2.08552</div><div class="kpi-sub">bruto estimado</div></div>
       </div>
       <div class="card">
-        <div class="card-title">Hashrate últimas 24h — Hydro Fleet (TH/s)</div>
+        <div class="card-title">Hashrate últimas 24h — Flota Hydro (TH/s)</div>
         <div class="chart-wrap"><canvas id="chart-hydro"></canvas></div>
       </div>
       <div style="margin-top:10px">
@@ -250,12 +250,12 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <!-- ── STANDARD FLEET ─────────────────────────────────────── -->
     <div id="pane-standard" class="tab-pane" style="margin-top:20px">
       <div class="g3" style="margin-top:0">
-        <div class="kpi-card"><div class="kpi-label">Hashrate Standard Fleet</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">214 × S19</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hashrate Flota Standard</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">214 × S19</div></div>
         <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="sf-online">—</div><div class="kpi-sub">de 214 total</div></div>
         <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgreen">3.99528</div><div class="kpi-sub">bruto estimado</div></div>
       </div>
       <div class="card">
-        <div class="card-title">Hashrate últimas 24h — Standard Fleet (TH/s)</div>
+        <div class="card-title">Hashrate últimas 24h — Flota Standard (TH/s)</div>
         <div class="chart-wrap"><canvas id="chart-std"></canvas></div>
       </div>
       <div style="margin-top:10px">
@@ -373,6 +373,13 @@ if(localStorage.getItem('nhpp')==='1'){
   boot();
 }
 
+// ═══ TIMESTAMP ═══════════════════════════════════════════════════
+function updateTimestamp(){
+  const now = new Date();
+  document.getElementById('timestamp').textContent =
+    '· ' + now.toLocaleString('es-PY',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+
 // ═══ BOOT ═════════════════════════════════════════════════════════
 function boot(){
   genWorkers();
@@ -380,7 +387,8 @@ function boot(){
   renderAll();
   renderWorkerTables();
   renderPagos();
-  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); }, 30000);
+  updateTimestamp();
+  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); }, 30000);
   setInterval(fetchPrice, 60000);
 }
 
@@ -439,11 +447,10 @@ function renderAll(){
 
   // Hero
   document.getElementById('hero-date').textContent  = now.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
-  document.getElementById('last-upd').textContent   = '· Actualizado ' + tf(now);
 
   // KPI strip
   document.getElementById('kpi-hr').textContent        = thr(totalHR);
-  document.getElementById('kpi-workers').textContent   = `${totalOnl} / ${HYDRO_N+STD_N} workers online`;
+  document.getElementById('kpi-workers').textContent   = `${totalOnl} / ${HYDRO_N+STD_N} workers activos`;
   document.getElementById('kpi-today').textContent     = f4(btcToday) + ' BTC';
   document.getElementById('kpi-today-usd').textContent = btcPrice>0 ? usd(btcToday*btcPrice) : '—';
   document.getElementById('kpi-month').textContent     = f4(btcMonth) + ' BTC';
@@ -453,8 +460,8 @@ function renderAll(){
   // Overview fleet cards
   document.getElementById('ov-hydro-hr').textContent     = thr(hydroHR);
   document.getElementById('ov-std-hr').textContent       = thr(stdHR);
-  document.getElementById('ov-hydro-status').textContent = `${hydroOnl}/${HYDRO_N} workers · ±3% fluctuación`;
-  document.getElementById('ov-std-status').textContent   = `${stdOnl}/${STD_N} workers · ±3% fluctuación`;
+  document.getElementById('ov-hydro-status').textContent = `${hydroOnl}/${HYDRO_N} workers activos · ±3% fluctuación`;
+  document.getElementById('ov-std-status').textContent   = `${stdOnl}/${STD_N} workers activos · ±3% fluctuación`;
   document.getElementById('ov-h-online').textContent     = `${hydroOnl} / ${HYDRO_N}`;
   document.getElementById('ov-s-online').textContent     = `${stdOnl} / ${STD_N}`;
   if(btcPrice>0){
@@ -482,8 +489,8 @@ function renderAll(){
   document.getElementById('prod-proj').innerHTML = `
     <div class="rd"><span class="l">BTC proyectado (${daysInMo} días)</span><span class="v cgold">${f4(btcEOM)} BTC</span></div>
     <div class="rd"><span class="l">USD proyectado</span><span class="v cgreen">${btcPrice>0?usd(btcEOM*btcPrice):'—'}</span></div>
-    <div class="rd"><span class="l">Hydro Fleet (30d)</span><span class="v">${f4(HYDRO_DAILY_BTC*30)} BTC</span></div>
-    <div class="rd"><span class="l">Standard Fleet (30d)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
+    <div class="rd"><span class="l">Flota Hydro (30 días)</span><span class="v">${f4(HYDRO_DAILY_BTC*30)} BTC</span></div>
+    <div class="rd"><span class="l">Flota Standard (30 días)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
     <div class="rd"><span class="l">Próximo pago F2Pool</span><span class="v cgreen">Días 1–5 del mes</span></div>
   `;
 }
@@ -494,7 +501,7 @@ function renderWorkerTables(){
     <td class="wname">${w.name}</td>
     <td>${w.on ? Math.round(w.hr)+' TH/s' : '—'}</td>
     <td>${w.eff}</td>
-    <td class="${w.on?'on':'off'}">${w.on?'● Online':'● Offline'}</td>
+    <td class="${w.on?'on':'off'}">${w.on?'● En línea':'● Sin conexión'}</td>
     <td>${w.ls}</td>
   </tr>`;
   document.getElementById('tbody-hydro').innerHTML = hydroW.map(row).join('');
