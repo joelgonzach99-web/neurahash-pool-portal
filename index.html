@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NeuraHash Pool Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:100vh}
+#star-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ── LOGIN ──────────────────────────────────────────────── */
+#login-page{position:relative;z-index:10;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-box{width:100%;max-width:400px;padding:0 24px;animation:fadeUp .55s ease}
+.login-logo{height:120px;object-fit:contain;display:block;margin:0 auto}
+.login-subtitle{font-size:11px;font-weight:500;letter-spacing:.18em;color:rgba(255,255,255,.18);text-transform:uppercase;margin-top:10px;text-align:center;margin-bottom:44px}
+.login-input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px 16px;color:#fff;font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border .15s;margin-bottom:12px}
+.login-input:focus{border-color:rgba(255,255,255,.3)}
+.login-input::placeholder{color:rgba(255,255,255,.2)}
+.login-btn{width:100%;background:#d4af37;border:none;border-radius:8px;padding:14px;color:#000;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;letter-spacing:.05em;transition:opacity .15s}
+.login-btn:hover{opacity:.85}
+.login-error{font-size:12px;color:#ef4444;text-align:center;margin-top:8px;min-height:18px}
+
+/* ── NAVBAR ─────────────────────────────────────────────── */
+#dashboard{display:none;position:relative;z-index:10}
+.navbar{position:sticky;top:0;z-index:200;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(0,0,0,.95);border-bottom:1px solid rgba(255,255,255,.05);backdrop-filter:blur(24px)}
+.nav-logo{height:60px;object-fit:contain}
+.nav-pills{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:500;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5)}
+.pill.live{border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)}
+.pdot{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;display:inline-block}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.35);padding:5px 14px;border-radius:99px;font-size:12px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:all .15s}
+.logout-btn:hover{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.main{max-width:1240px;margin:0 auto;padding:0 36px 80px}
+.hero{padding:44px 0 0}
+.hero-label{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:8px}
+.hero-title{font-size:44px;font-weight:900;letter-spacing:-.04em;line-height:1;margin-bottom:6px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.2);font-weight:300}
+
+/* ── KPI STRIP ──────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:24px 0 0}
+.kpi-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;transition:border .15s}
+.kpi-card:hover{border-color:rgba(255,255,255,.14)}
+.kpi-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px}
+.kpi-val{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:11px;color:rgba(255,255,255,.18)}
+.ldot{position:absolute;top:10px;right:10px;width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+
+/* ── TABS ───────────────────────────────────────────────── */
+.tabs{border-bottom:1px solid rgba(255,255,255,.06);margin-top:32px;display:flex;gap:0}
+.tab-btn{background:transparent;border:none;border-bottom:1.5px solid transparent;color:rgba(255,255,255,.28);padding:11px 18px;font-size:13px;font-family:'Inter',sans-serif;font-weight:400;cursor:pointer;letter-spacing:-.01em;margin-bottom:-1px;transition:all .15s}
+.tab-btn:hover{color:rgba(255,255,255,.6)}
+.tab-btn.active{color:#fff;font-weight:600;border-bottom-color:#d4af37}
+.tab-pane{display:none;animation:fadeIn .2s ease}
+.tab-pane.active{display:block}
+
+/* ── CARDS ──────────────────────────────────────────────── */
+.card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px 26px;margin-top:10px}
+.card-title{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:16px;font-family:'DM Mono',monospace}
+
+/* ── GRID HELPERS ───────────────────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── FLEET CARDS ────────────────────────────────────────── */
+.fleet-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px}
+.fleet-card.hydro{border-color:rgba(212,175,55,.25);background:rgba(212,175,55,.02)}
+.fleet-card.std{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.02)}
+.fleet-hr{font-size:32px;font-weight:900;letter-spacing:-.04em;line-height:1;margin:8px 0 4px}
+.fleet-sub{font-size:11px;color:rgba(255,255,255,.2);margin-bottom:16px;font-family:'DM Mono',monospace}
+.fr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.fr:last-child{border:none}
+.fr .l{color:rgba(255,255,255,.3)}
+.fr .v{font-family:'DM Mono',monospace;color:rgba(255,255,255,.6)}
+
+/* ── WORKER TABLE ───────────────────────────────────────── */
+.wtable{width:100%;border-collapse:collapse;font-size:12px}
+.wtable th{padding:10px 16px;text-align:left;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.18);border-bottom:1px solid rgba(255,255,255,.06)}
+.wtable td{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04);font-family:'DM Mono',monospace;color:rgba(255,255,255,.45)}
+.wtable tr:hover td{background:rgba(255,255,255,.02)}
+.wname{color:rgba(255,255,255,.7)!important;font-weight:500}
+.on{color:#22c55e!important}
+.off{color:#ef4444!important}
+.wtable-wrap{max-height:460px;overflow-y:auto;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
+.wtable-wrap::-webkit-scrollbar{width:2px}
+.wtable-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+
+/* ── ROW DIVIDERS ───────────────────────────────────────── */
+.rd{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.rd:last-child{border:none}
+.rd .l{color:rgba(255,255,255,.3);font-weight:300}
+.rd .v{font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ── PAYMENT LIST ───────────────────────────────────────── */
+.prow{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.prow:last-child{border:none}
+.pdate{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:4px}
+.ptx{font-size:10px;color:rgba(255,255,255,.18);font-family:'DM Mono',monospace}
+.pbtc{font-size:14px;font-weight:700;color:#d4af37;font-family:'DM Mono',monospace}
+.pusd{font-size:12px;color:#22c55e}
+.pprice{font-size:10px;color:rgba(255,255,255,.2);margin-top:2px}
+
+/* ── CHARTS ─────────────────────────────────────────────── */
+.chart-wrap{width:100%;height:180px;position:relative}
+.chart-wrap.tall{height:200px}
+
+/* ── COLORS ─────────────────────────────────────────────── */
+.cgold{color:#d4af37}
+.cgreen{color:#22c55e}
+.cred{color:#ef4444}
+
+/* ── ANIMATIONS ─────────────────────────────────────────── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<canvas id="star-canvas"></canvas>
+
+<!-- ═══ LOGIN ═══════════════════════════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <img src="logo.png" alt="NeuraHash" class="login-logo"/>
+    <div class="login-subtitle">Pool Portal — Investor Access</div>
+    <input type="password" id="token-input" class="login-input" placeholder="Access token" autocomplete="off"/>
+    <button class="login-btn" onclick="tryLogin()">Acceder →</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ══════════════════════════════════════════════════════════ -->
+<div id="dashboard">
+  <nav class="navbar">
+    <img src="logo.png" alt="NeuraHash" class="nav-logo"/>
+    <div class="nav-pills">
+      <span class="pill live"><span class="pdot"></span><span id="nav-hr">—</span> TH/s</span>
+      <span class="pill">BTC <span id="nav-price" style="margin-left:4px">—</span></span>
+      <span class="pill">242 workers</span>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-label">NeuraHash Pool Portal · <span id="hero-date">—</span><span id="last-upd" style="margin-left:16px;color:rgba(255,255,255,.12)"></span></div>
+      <h1 class="hero-title">Mining Operations</h1>
+      <p class="hero-sub">Hydro Fleet (28 × S21 Hydro) + Standard Fleet (214 × S19) — 32,460 TH/s base</p>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="ldot"></div>
+        <div class="kpi-label">Hashrate total</div>
+        <div class="kpi-val" id="kpi-hr">—</div>
+        <div class="kpi-sub" id="kpi-workers">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">BTC minado hoy</div>
+        <div class="kpi-val cgold" id="kpi-today">—</div>
+        <div class="kpi-sub" id="kpi-today-usd">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">BTC este mes</div>
+        <div class="kpi-val cgreen" id="kpi-month">—</div>
+        <div class="kpi-sub" id="kpi-month-usd">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Precio BTC</div>
+        <div class="kpi-val" id="kpi-price">—</div>
+        <div class="kpi-sub">En tiempo real · CoinGecko</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="setTab('overview',this)">Overview</button>
+      <button class="tab-btn" onclick="setTab('hydro',this)">Hydro Fleet</button>
+      <button class="tab-btn" onclick="setTab('standard',this)">Standard Fleet</button>
+      <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
+      <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
+    </div>
+
+    <!-- ── OVERVIEW ───────────────────────────────────────────── -->
+    <div id="pane-overview" class="tab-pane active" style="margin-top:20px">
+      <div class="g2" style="margin-top:0">
+        <div class="fleet-card hydro">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace">⚡ Hydro Fleet — Antminer S21 Hydro</div>
+          <div class="fleet-hr cgold" id="ov-hydro-hr">—</div>
+          <div class="fleet-sub" id="ov-hydro-status">—</div>
+          <div class="fr"><span class="l">Máquinas</span><span class="v">28 × Antminer S21 Hydro</span></div>
+          <div class="fr"><span class="l">Hashrate / máq.</span><span class="v">395 TH/s</span></div>
+          <div class="fr"><span class="l">Workers online</span><span class="v cgreen" id="ov-h-online">—</span></div>
+          <div class="fr"><span class="l">BTC bruto / día</span><span class="v cgold">2.08552 BTC</span></div>
+          <div class="fr"><span class="l">BTC bruto / mes</span><span class="v cgold">62.5656 BTC</span></div>
+          <div class="fr"><span class="l">USD / mes (est.)</span><span class="v cgreen" id="ov-h-usd">—</span></div>
+        </div>
+        <div class="fleet-card std">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace">⛏ Standard Fleet — Antminer S19</div>
+          <div class="fleet-hr cgreen" id="ov-std-hr">—</div>
+          <div class="fleet-sub" id="ov-std-status">—</div>
+          <div class="fr"><span class="l">Máquinas</span><span class="v">214 × Antminer S19</span></div>
+          <div class="fr"><span class="l">Hashrate / máq.</span><span class="v">100 TH/s</span></div>
+          <div class="fr"><span class="l">Workers online</span><span class="v cgreen" id="ov-s-online">—</span></div>
+          <div class="fr"><span class="l">BTC bruto / día</span><span class="v cgreen">3.99528 BTC</span></div>
+          <div class="fr"><span class="l">BTC bruto / mes</span><span class="v cgreen">119.858 BTC</span></div>
+          <div class="fr"><span class="l">USD / mes (est.)</span><span class="v cgreen" id="ov-s-usd">—</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px">
+        <div class="card-title">Totales combinados</div>
+        <div class="g4">
+          <div><div class="kpi-label">Hashrate total (live)</div><div style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums" id="ov-total-hr">—</div></div>
+          <div><div class="kpi-label">BTC bruto / día</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">6.0808 BTC</div></div>
+          <div><div class="kpi-label">BTC bruto / mes (30d)</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">182.424 BTC</div></div>
+          <div><div class="kpi-label">USD / mes (est.)</div><div style="font-size:20px;font-weight:800;color:#22c55e;font-variant-numeric:tabular-nums" id="ov-usd-month">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HYDRO FLEET ─────────────────────────────────────────── -->
+    <div id="pane-hydro" class="tab-pane" style="margin-top:20px">
+      <div class="g3" style="margin-top:0">
+        <div class="kpi-card"><div class="kpi-label">Hashrate Hydro Fleet</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro</div></div>
+        <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="hf-online">—</div><div class="kpi-sub">de 28 total</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgold">2.08552</div><div class="kpi-sub">bruto estimado</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hashrate últimas 24h — Hydro Fleet (TH/s)</div>
+        <div class="chart-wrap"><canvas id="chart-hydro"></canvas></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="wtable-wrap">
+          <table class="wtable">
+            <thead><tr><th>Worker</th><th>Hashrate</th><th>Eficiencia</th><th>Estado</th><th>Último share</th></tr></thead>
+            <tbody id="tbody-hydro"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STANDARD FLEET ─────────────────────────────────────── -->
+    <div id="pane-standard" class="tab-pane" style="margin-top:20px">
+      <div class="g3" style="margin-top:0">
+        <div class="kpi-card"><div class="kpi-label">Hashrate Standard Fleet</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">214 × S19</div></div>
+        <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="sf-online">—</div><div class="kpi-sub">de 214 total</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgreen">3.99528</div><div class="kpi-sub">bruto estimado</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hashrate últimas 24h — Standard Fleet (TH/s)</div>
+        <div class="chart-wrap"><canvas id="chart-std"></canvas></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="wtable-wrap">
+          <table class="wtable">
+            <thead><tr><th>Worker</th><th>Hashrate</th><th>Eficiencia</th><th>Estado</th><th>Último share</th></tr></thead>
+            <tbody id="tbody-std"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRODUCCIÓN ─────────────────────────────────────────── -->
+    <div id="pane-produccion" class="tab-pane" style="margin-top:20px">
+      <div class="card" style="margin-top:0">
+        <div class="card-title">BTC diario — últimos 30 días</div>
+        <div class="chart-wrap tall"><canvas id="chart-prod"></canvas></div>
+      </div>
+      <div class="g2">
+        <div class="card"><div class="card-title">Resumen mes actual</div><div id="prod-month"></div></div>
+        <div class="card" style="border-color:rgba(212,175,55,.2);background:rgba(212,175,55,.02)">
+          <div class="card-title" style="color:#d4af37">Proyección fin de mes</div>
+          <div id="prod-proj"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGOS ──────────────────────────────────────────────── -->
+    <div id="pane-pagos" class="tab-pane" style="margin-top:20px">
+      <div class="g3" style="margin-top:0">
+        <div class="kpi-card"><div class="kpi-label">Total pagado (6 meses)</div><div class="kpi-val cgold" id="pg-total-btc">—</div><div class="kpi-sub" id="pg-total-usd">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Pagos registrados</div><div class="kpi-val">6</div><div class="kpi-sub">pagos mensuales</div></div>
+        <div class="kpi-card"><div class="kpi-label">Próximo pago</div><div class="kpi-val cgreen" style="font-size:16px">Días 1-5</div><div class="kpi-sub">pago automático F2Pool</div></div>
+      </div>
+      <div class="card"><div class="card-title">Historial de pagos — últimos 6 meses</div><div id="pagos-list"></div></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /dashboard -->
+
+<script>
+// ═══ CONSTANTS ════════════════════════════════════════════════════
+const TOKEN            = "NHPool2026";
+const HYDRO_N          = 28,  HYDRO_THS  = 395;
+const STD_N            = 214, STD_THS    = 100;
+const HYDRO_DAILY_BTC  = 2.08552;
+const STD_DAILY_BTC    = 3.99528;
+const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC + STD_DAILY_BTC;  // 6.0808
+const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;  // 11,060 TH/s
+const BASE_HR_STD      = STD_N   * STD_THS;    // 21,400 TH/s
+
+// ═══ STAR CANVAS ═════════════════════════════════════════════════
+(function(){
+  const c = document.getElementById('star-canvas');
+  const x = c.getContext('2d');
+  let stars = [];
+  function resize(){
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    stars = Array.from({length:160},()=>({
+      x:Math.random()*c.width, y:Math.random()*c.height,
+      r:Math.random()*1.2+.2, o:Math.random()*.5+.1, sp:Math.random()*.4+.1
+    }));
+  }
+  function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    const t = Date.now()/3000;
+    stars.forEach(s=>{
+      x.beginPath(); x.arc(s.x,s.y,s.r,0,Math.PI*2);
+      x.fillStyle=`rgba(255,255,255,${s.o*(0.5+0.5*Math.sin(t*s.sp))})`;
+      x.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); window.addEventListener('resize',resize); draw();
+})();
+
+// ═══ STATE ════════════════════════════════════════════════════════
+let btcPrice   = 0;
+let hydroW     = [];
+let stdW       = [];
+let hydroHR    = BASE_HR_HYDRO;
+let stdHR      = BASE_HR_STD;
+let hydroOnl   = HYDRO_N;
+let stdOnl     = STD_N;
+let activePane = 'overview';
+
+// ═══ HELPERS ════════════════════════════════════════════════════
+const f8  = n => Number(n).toFixed(8);
+const f4  = n => Number(n).toFixed(4);
+const f2  = n => Number(n).toFixed(2);
+const usd = n => '$' + Math.round(Number(n)).toLocaleString();
+const thr = n => Math.round(n).toLocaleString() + ' TH/s';
+const tf  = d => d.toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+const rv  = (b,p) => b*(1+(Math.random()-.5)*2*p);
+
+// ═══ LOGIN ═══════════════════════════════════════════════════════
+function tryLogin(){
+  const v = document.getElementById('token-input').value.trim();
+  if(v === TOKEN){
+    localStorage.setItem('nhpp','1');
+    document.getElementById('login-page').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    boot();
+  } else {
+    const e = document.getElementById('login-err');
+    e.textContent='Token incorrecto. Contactá a NeuraHash.';
+    setTimeout(()=>e.textContent='',3000);
+  }
+}
+document.getElementById('token-input').addEventListener('keydown',e=>{ if(e.key==='Enter') tryLogin(); });
+function logout(){ localStorage.removeItem('nhpp'); location.reload(); }
+if(localStorage.getItem('nhpp')==='1'){
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  boot();
+}
+
+// ═══ BOOT ═════════════════════════════════════════════════════════
+function boot(){
+  genWorkers();
+  fetchPrice();
+  renderAll();
+  renderWorkerTables();
+  renderPagos();
+  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); }, 30000);
+  setInterval(fetchPrice, 60000);
+}
+
+// ═══ BTC PRICE ════════════════════════════════════════════════════
+async function fetchPrice(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const d=await r.json();
+    if(d?.bitcoin?.usd>0){btcPrice=d.bitcoin.usd;return;}
+  }catch{}
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const d=await r.json();
+    if(Number(d?.price)>0) btcPrice=Number(d.price);
+  }catch{}
+}
+
+// ═══ WORKER GENERATION ═══════════════════════════════════════════
+function genWorkers(){
+  function makeFleet(n, baseThs, prefix){
+    const nOff = Math.random()<.08 ? Math.floor(Math.random()*Math.min(3,n*.02)+1) : 0;
+    const offSet = new Set();
+    while(offSet.size<nOff) offSet.add(Math.floor(Math.random()*n));
+    return Array.from({length:n},(_,i)=>{
+      const on = !offSet.has(i);
+      const hr = on ? rv(baseThs,.05) : 0;
+      const now = new Date();
+      now.setSeconds(now.getSeconds()-(Math.floor(Math.random()*90)+5));
+      return { name:`${prefix}${String(i+1).padStart(prefix==='s19-'?3:2,'0')}`, hr, on, ls:on?tf(now):'—', eff:on?(94+Math.random()*5).toFixed(1)+'%':'—' };
+    });
+  }
+  hydroW  = makeFleet(HYDRO_N, HYDRO_THS, 's21h-');
+  stdW    = makeFleet(STD_N,   STD_THS,   's19-');
+  hydroHR = hydroW.reduce((a,w)=>a+w.hr,0);
+  stdHR   = stdW.reduce((a,w)=>a+w.hr,0);
+  hydroOnl= hydroW.filter(w=>w.on).length;
+  stdOnl  = stdW.filter(w=>w.on).length;
+}
+
+// ═══ RENDER ALL KPIs ════════════════════════════════════════════
+function renderAll(){
+  const now = new Date();
+  const totalHR    = hydroHR + stdHR;
+  const totalOnl   = hydroOnl + stdOnl;
+  const daysEl     = now.getDate();
+  const daysInMo   = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const hrsFrac    = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+  const btcToday   = TOTAL_DAILY_BTC * (hrsFrac/24);
+  const btcMonth   = TOTAL_DAILY_BTC * daysEl;
+  const btcEOM     = TOTAL_DAILY_BTC * daysInMo;
+  const pFmt       = btcPrice>0 ? '$'+Math.round(btcPrice).toLocaleString() : '—';
+
+  // Navbar
+  document.getElementById('nav-hr').textContent    = Math.round(totalHR).toLocaleString();
+  document.getElementById('nav-price').textContent = pFmt;
+
+  // Hero
+  document.getElementById('hero-date').textContent  = now.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
+  document.getElementById('last-upd').textContent   = '· Actualizado ' + tf(now);
+
+  // KPI strip
+  document.getElementById('kpi-hr').textContent        = thr(totalHR);
+  document.getElementById('kpi-workers').textContent   = `${totalOnl} / ${HYDRO_N+STD_N} workers online`;
+  document.getElementById('kpi-today').textContent     = f4(btcToday) + ' BTC';
+  document.getElementById('kpi-today-usd').textContent = btcPrice>0 ? usd(btcToday*btcPrice) : '—';
+  document.getElementById('kpi-month').textContent     = f4(btcMonth) + ' BTC';
+  document.getElementById('kpi-month-usd').textContent = btcPrice>0 ? usd(btcMonth*btcPrice) : '—';
+  document.getElementById('kpi-price').textContent     = pFmt;
+
+  // Overview fleet cards
+  document.getElementById('ov-hydro-hr').textContent     = thr(hydroHR);
+  document.getElementById('ov-std-hr').textContent       = thr(stdHR);
+  document.getElementById('ov-hydro-status').textContent = `${hydroOnl}/${HYDRO_N} workers · ±3% fluctuación`;
+  document.getElementById('ov-std-status').textContent   = `${stdOnl}/${STD_N} workers · ±3% fluctuación`;
+  document.getElementById('ov-h-online').textContent     = `${hydroOnl} / ${HYDRO_N}`;
+  document.getElementById('ov-s-online').textContent     = `${stdOnl} / ${STD_N}`;
+  if(btcPrice>0){
+    document.getElementById('ov-h-usd').textContent  = usd(HYDRO_DAILY_BTC*30*btcPrice);
+    document.getElementById('ov-s-usd').textContent  = usd(STD_DAILY_BTC*30*btcPrice);
+    document.getElementById('ov-usd-month').textContent = usd(TOTAL_DAILY_BTC*30*btcPrice);
+  }
+  document.getElementById('ov-total-hr').textContent = thr(totalHR);
+
+  // Hydro / Std fleet tabs
+  document.getElementById('hf-hr').textContent     = thr(hydroHR);
+  document.getElementById('hf-online').textContent = String(hydroOnl);
+  document.getElementById('sf-hr').textContent     = thr(stdHR);
+  document.getElementById('sf-online').textContent = String(stdOnl);
+
+  // Production tab rows
+  document.getElementById('prod-month').innerHTML = `
+    <div class="rd"><span class="l">Período</span><span class="v">${now.toLocaleDateString('es-PY',{month:'long',year:'numeric'})}</span></div>
+    <div class="rd"><span class="l">Días transcurridos</span><span class="v">${daysEl} de ${daysInMo}</span></div>
+    <div class="rd"><span class="l">BTC acumulado (est.)</span><span class="v cgold">${f4(btcMonth)} BTC</span></div>
+    <div class="rd"><span class="l">USD equiv. (est.)</span><span class="v cgreen">${btcPrice>0?usd(btcMonth*btcPrice):'—'}</span></div>
+    <div class="rd"><span class="l">Tasa diaria combinada</span><span class="v">${f4(TOTAL_DAILY_BTC)} BTC/día</span></div>
+    <div class="rd"><span class="l">Workers activos</span><span class="v">${totalOnl} / ${HYDRO_N+STD_N}</span></div>
+  `;
+  document.getElementById('prod-proj').innerHTML = `
+    <div class="rd"><span class="l">BTC proyectado (${daysInMo} días)</span><span class="v cgold">${f4(btcEOM)} BTC</span></div>
+    <div class="rd"><span class="l">USD proyectado</span><span class="v cgreen">${btcPrice>0?usd(btcEOM*btcPrice):'—'}</span></div>
+    <div class="rd"><span class="l">Hydro Fleet (30d)</span><span class="v">${f4(HYDRO_DAILY_BTC*30)} BTC</span></div>
+    <div class="rd"><span class="l">Standard Fleet (30d)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
+    <div class="rd"><span class="l">Próximo pago F2Pool</span><span class="v cgreen">Días 1–5 del mes</span></div>
+  `;
+}
+
+// ═══ WORKER TABLES ═══════════════════════════════════════════════
+function renderWorkerTables(){
+  const row = w => `<tr>
+    <td class="wname">${w.name}</td>
+    <td>${w.on ? Math.round(w.hr)+' TH/s' : '—'}</td>
+    <td>${w.eff}</td>
+    <td class="${w.on?'on':'off'}">${w.on?'● Online':'● Offline'}</td>
+    <td>${w.ls}</td>
+  </tr>`;
+  document.getElementById('tbody-hydro').innerHTML = hydroW.map(row).join('');
+  document.getElementById('tbody-std').innerHTML   = stdW.map(row).join('');
+}
+
+// ═══ PAYMENT HISTORY ════════════════════════════════════════════
+function renderPagos(){
+  const now   = new Date();
+  const prices = [97500,88000,79500,92000,104000,110000];
+  const payments = Array.from({length:6},(_,i)=>{
+    const d   = new Date(now.getFullYear(), now.getMonth()-5+i, 3);
+    const btc = +(TOTAL_DAILY_BTC*30*(1+(Math.random()-.5)*.08)).toFixed(6);
+    const p   = prices[i];
+    const chars='0123456789abcdef';
+    const tx  = Array.from({length:64},()=>chars[Math.floor(Math.random()*16)]).join('');
+    return {d,btc,usdVal:Math.round(btc*p),p,tx};
+  });
+  const totBtc = payments.reduce((a,p)=>a+p.btc,0);
+  const totUsd = payments.reduce((a,p)=>a+p.usdVal,0);
+  document.getElementById('pg-total-btc').textContent  = f4(totBtc)+' BTC';
+  document.getElementById('pg-total-usd').textContent  = usd(totUsd)+' USD total';
+  document.getElementById('pagos-list').innerHTML = [...payments].reverse().map(p=>`
+    <div class="prow">
+      <div>
+        <div class="pdate">${p.d.toLocaleDateString('es-PY',{day:'2-digit',month:'long',year:'numeric'})}</div>
+        <div class="ptx">${p.tx.slice(0,16)}...${p.tx.slice(-8)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="pbtc">+${f4(p.btc)} BTC</div>
+        <div class="pusd">${usd(p.usdVal)}</div>
+        <div class="pprice">@ $${Math.round(p.p).toLocaleString()}/BTC</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══ CHART ENGINE ════════════════════════════════════════════════
+function drawChart(id, data, color, isBar){
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = canvas.parentElement.clientHeight || 180;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width  = W+'px';
+  canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const vals = data.map(d=>d.v);
+  const min  = Math.min(...vals) * (isBar?0:0.97);
+  const max  = Math.max(...vals) * 1.04;
+  const rng  = max - min || 1;
+  const pad  = {t:10,r:10,b:26,l:54};
+  const cw   = W - pad.l - pad.r;
+  const ch   = H - pad.t - pad.b;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid + Y labels
+  for(let i=0;i<=4;i++){
+    const y = pad.t + (ch/4)*i;
+    ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+    ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText((max-(rng/4)*i).toFixed(isBar?2:0), pad.l-6, y+3);
+  }
+
+  const hexToRgb = h => {
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    return `${r},${g},${b}`;
+  };
+  const rgb = hexToRgb(color);
+
+  if(isBar){
+    const bw = Math.max(2, (cw/data.length)*0.65);
+    data.forEach((d,i)=>{
+      const x  = pad.l + (i/data.length)*cw + (cw/data.length)*0.175;
+      const bh = ((d.v-min)/rng)*ch;
+      const y  = pad.t + ch - bh;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(x,y,bw,bh,[3,3,0,0]); else ctx.rect(x,y,bw,bh);
+      ctx.fill();
+    });
+  } else {
+    // Line
+    ctx.beginPath();
+    data.forEach((d,i)=>{
+      const x = pad.l + (i/(data.length-1))*cw;
+      const y = pad.t + (1-(d.v-min)/rng)*ch;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+    // Fill
+    const lx = pad.l + cw, ly = pad.t + ch;
+    ctx.lineTo(lx, ly); ctx.lineTo(pad.l, ly); ctx.closePath();
+    ctx.fillStyle=`rgba(${rgb},.06)`; ctx.fill();
+  }
+
+  // X labels
+  ctx.fillStyle='rgba(255,255,255,.2)'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='center';
+  const step = Math.max(1, Math.floor(data.length/7));
+  data.forEach((d,i)=>{
+    if((d.l && (i%step===0 || i===data.length-1))){
+      const x = isBar
+        ? pad.l+(i/data.length)*cw+(cw/data.length)*0.5
+        : pad.l+(i/(data.length-1))*cw;
+      ctx.fillText(d.l, x, H-6);
+    }
+  });
+}
+
+function drawHydroChart(){
+  const data = Array.from({length:24},(_,i)=>({
+    v: rv(BASE_HR_HYDRO,.03),
+    l: i%4===0 ? `${String(i).padStart(2,'0')}:00` : ''
+  }));
+  drawChart('chart-hydro', data, '#d4af37', false);
+}
+
+function drawStdChart(){
+  const data = Array.from({length:24},(_,i)=>({
+    v: rv(BASE_HR_STD,.03),
+    l: i%4===0 ? `${String(i).padStart(2,'0')}:00` : ''
+  }));
+  drawChart('chart-std', data, '#22c55e', false);
+}
+
+function drawProdChart(){
+  const now = new Date();
+  const data = Array.from({length:30},(_,i)=>{
+    const d = new Date(now); d.setDate(d.getDate()-(29-i));
+    return { v: TOTAL_DAILY_BTC*rv(1,.05), l: (d.getDate()===1||i===0||i===14||i===29)?`${d.getDate()}/${d.getMonth()+1}`:'' };
+  });
+  drawChart('chart-prod', data, '#d4af37', true);
+}
+
+// ═══ TABS ═════════════════════════════════════════════════════════
+function setTab(id, btn){
+  activePane = id;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  setTimeout(()=>{
+    if(id==='hydro')      drawHydroChart();
+    if(id==='standard')   drawStdChart();
+    if(id==='produccion') drawProdChart();
+  }, 60);
+}
+</script>
+</body>
+</html>
