@@ -194,6 +194,13 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── ESTIMACIONES ─────────────────────────────────────────── -->
     <div id="pane-estimaciones" class="tab-pane active" style="margin-top:20px">
+      <div style="background:rgba(255,255,255,.03);border:1px solid #333;border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;">
+        <span style="color:#555;font-size:11px;letter-spacing:1px;white-space:nowrap">PRECIO BTC</span>
+        <input type="range" id="btcSlider" min="30000" max="200000" step="1000" style="flex:1;accent-color:#d4af37;">
+        <input type="number" id="btcInput" style="width:120px;background:#111;border:1px solid #333;color:#fff;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:700;font-family:'DM Mono',monospace;">
+        <button id="btcLiveBtn" style="padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:#1a2a1a;border:1px solid #22c55e;color:#22c55e;font-family:'Inter',sans-serif;">LIVE</button>
+        <span id="btcModeLabel" style="font-size:10px;color:#555;white-space:nowrap">En tiempo real · CoinGecko</span>
+      </div>
       <div class="g2" style="margin-top:0">
         <div class="card" style="border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.02);margin-top:0">
           <div class="card-title" style="color:#d4af37">Flota Hydro — Estimación Mensual</div>
@@ -383,8 +390,9 @@ const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC  + STD_DAILY_BTC;
 })();
 
 // ═══ STATE ════════════════════════════════════════════════════════
-let btcPrice   = 0;
-let hydroW     = [];
+let btcPrice       = 0;
+let manualBtcPrice = null;
+let hydroW         = [];
 let stdW       = [];
 let hydroHR    = BASE_HR_HYDRO;
 let stdHR      = BASE_HR_STD;
@@ -393,6 +401,15 @@ let stdOnl     = STD_N;
 let activePane = 'estimaciones';
 
 // ═══ HELPERS ════════════════════════════════════════════════════
+const getEffectiveBtcPrice = () => manualBtcPrice || btcPrice;
+function updatePriceControls(){
+  if (manualBtcPrice) return;
+  const v = Math.round(btcPrice);
+  const el = document.getElementById('btcSlider');
+  if (el) { el.value = Math.min(Math.max(v, 30000), 200000); }
+  const inp = document.getElementById('btcInput');
+  if (inp) { inp.value = v.toLocaleString(); }
+}
 const f8  = n => Number(n).toFixed(8);
 const f4  = n => Number(n).toFixed(4);
 const f2  = n => Number(n).toFixed(2);
@@ -447,12 +464,12 @@ async function fetchPrice(){
   try{
     const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
     const d=await r.json();
-    if(d?.bitcoin?.usd>0){btcPrice=d.bitcoin.usd;return;}
+    if(d?.bitcoin?.usd>0){btcPrice=d.bitcoin.usd;updatePriceControls();return;}
   }catch{}
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
     const d=await r.json();
-    if(Number(d?.price)>0) btcPrice=Number(d.price);
+    if(Number(d?.price)>0){btcPrice=Number(d.price);updatePriceControls();}
   }catch{}
 }
 
@@ -533,9 +550,10 @@ function renderAll(){
 
   // ── Monthly estimate variables (30.41 days) ────────────────────
   const p               = btcPrice;
+  const pEst            = getEffectiveBtcPrice();
   const DAYS_EST        = 30.41;
   const hydroBrutoEst   = HYDRO_DAILY_BTC * DAYS_EST;
-  const hydroEnrgBTC    = p > 0 ? HYDRO_ENERGIA / p : 0;
+  const hydroEnrgBTC    = pEst > 0 ? HYDRO_ENERGIA / pEst : 0;
   const hydroOperEst    = hydroBrutoEst - hydroEnrgBTC;
   const hydroInvEst     = hydroOperEst * 0.80;
   const hydroHostEst    = hydroOperEst * 0.20;
@@ -543,12 +561,12 @@ function renderAll(){
   const hydroNHEst      = hydroHostEst  * 0.65;
   const stdBrutoEst     = STD_DAILY_BTC * DAYS_EST;
   const stdCostosUSD    = STD_ENERGIA + STD_PERSONAL;
-  const stdCostosBTC    = p > 0 ? stdCostosUSD / p : 0;
+  const stdCostosBTC    = pEst > 0 ? stdCostosUSD / pEst : 0;
   const stdNetoEst      = stdBrutoEst - stdCostosBTC;
   const stdPacaloEst    = stdNetoEst * 0.50;
   const stdAllanEst     = stdNetoEst * 0.50;
   const totalPacaloEst  = hydroPacaloEst + stdPacaloEst;
-  const usdOrDash       = (val) => p > 0 ? ' / ' + usd(val*p) + ' USD' : '';
+  const usdOrDash       = (val) => pEst > 0 ? ' / ' + usd(val*pEst) + ' USD' : '';
 
   // Standard fleet tab KPIs
   document.getElementById('sf-hr').textContent            = thr(stdHR);
@@ -602,7 +620,7 @@ function renderAll(){
     </div>`;
   document.getElementById('est-hydro').innerHTML = `
     <div class="rd"><span class="l">Producción bruta (30.41 días)</span><span class="v cgold">${f8(hydroBrutoEst)} BTC${usdOrDash(hydroBrutoEst)}</span></div>
-    <div class="rd"><span class="l">Energía eléctrica (fijo)</span><span class="v cred">-$${HYDRO_ENERGIA.toLocaleString()} USD${p>0?' / -'+f8(hydroEnrgBTC)+' BTC':''}</span></div>
+    <div class="rd"><span class="l">Energía eléctrica (fijo)</span><span class="v cred">-$${HYDRO_ENERGIA.toLocaleString()} USD${pEst>0?' / -'+f8(hydroEnrgBTC)+' BTC':''}</span></div>
     <div class="rd"><span class="l">Ganancia operativa</span><span class="v">${f8(hydroOperEst)} BTC${usdOrDash(hydroOperEst)}</span></div>
     <div style="border-top:1px solid rgba(255,255,255,.06);margin:6px 0"></div>
     <div class="rd"><span class="l">Al inversor (80%)</span><span class="v">${f8(hydroInvEst)} BTC${usdOrDash(hydroInvEst)}</span></div>
@@ -625,15 +643,15 @@ function renderAll(){
   document.getElementById('est-pacalo').innerHTML = `
     <div class="rd"><span class="l">Hydro — hosting 35%</span><span class="v cgreen">${f8(hydroPacaloEst)} BTC${usdOrDash(hydroPacaloEst)}</span></div>
     <div class="rd"><span class="l">Standard — ganancia 50%</span><span class="v cgreen">${f8(stdPacaloEst)} BTC${usdOrDash(stdPacaloEst)}</span></div>
-    ${totalRow('TOTAL PACALO / MES', '#22c55e', f8(totalPacaloEst), p>0?usd(totalPacaloEst*p):'')}
+    ${totalRow('TOTAL PACALO / MES', '#22c55e', f8(totalPacaloEst), pEst>0?usd(totalPacaloEst*pEst):'')}
   `;
   document.getElementById('est-ae').innerHTML = `
     <div class="rd"><span class="l">Standard — ganancia 50%</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
-    ${totalRow('TOTAL / MES', '#3b82f6', f8(stdAllanEst), p>0?usd(stdAllanEst*p):'')}
+    ${totalRow('TOTAL / MES', '#3b82f6', f8(stdAllanEst), pEst>0?usd(stdAllanEst*pEst):'')}
   `;
   document.getElementById('est-nh').innerHTML = `
     <div class="rd"><span class="l">Hydro — hosting NH (65%)</span><span class="v cgold">${f8(hydroNHEst)} BTC${usdOrDash(hydroNHEst)}</span></div>
-    ${totalRow('TOTAL / MES', '#d4af37', f8(hydroNHEst), p>0?usd(hydroNHEst*p):'')}
+    ${totalRow('TOTAL / MES', '#d4af37', f8(hydroNHEst), pEst>0?usd(hydroNHEst*pEst):'')}
   `;
   document.getElementById('est-costos').innerHTML = `
     <div class="rd"><span class="l">Energía Flota Hydro</span><span class="v">$${HYDRO_ENERGIA.toLocaleString()} USD</span></div>
@@ -808,6 +826,42 @@ function drawProdChart(){
   });
   drawChart('chart-prod', data, '#d4af37', true);
 }
+
+// ═══ BTC PRICE OVERRIDE ══════════════════════════════════════════
+(function(){
+  const slider   = document.getElementById('btcSlider');
+  const input    = document.getElementById('btcInput');
+  const liveBtn  = document.getElementById('btcLiveBtn');
+  const modeLabel= document.getElementById('btcModeLabel');
+
+  function setManual(val){
+    manualBtcPrice = val;
+    slider.value   = Math.min(Math.max(val, 30000), 200000);
+    input.value    = val.toLocaleString();
+    modeLabel.textContent    = 'Modo manual';
+    modeLabel.style.color    = '#d4af37';
+    liveBtn.style.borderColor= '#555';
+    liveBtn.style.color      = '#555';
+    renderAll();
+  }
+
+  slider.addEventListener('input', () => setManual(parseInt(slider.value)));
+
+  input.addEventListener('input', () => {
+    const val = parseInt(input.value.replace(/,/g,''));
+    if (!isNaN(val) && val > 0) setManual(val);
+  });
+
+  liveBtn.addEventListener('click', () => {
+    manualBtcPrice           = null;
+    modeLabel.textContent    = 'En tiempo real · CoinGecko';
+    modeLabel.style.color    = '#555';
+    liveBtn.style.borderColor= '#22c55e';
+    liveBtn.style.color      = '#22c55e';
+    updatePriceControls();
+    renderAll();
+  });
+})();
 
 // ═══ TABS ═════════════════════════════════════════════════════════
 function setTab(id, btn){
