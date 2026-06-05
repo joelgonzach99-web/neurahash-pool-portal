@@ -296,12 +296,12 @@ const TOKEN            = "NHPool2026";
 const POOL_START_DATE  = null;                   // null = not started; set to "2026-06-XX" to activate
 
 const HYDRO_N          = 28,  HYDRO_THS  = 395;
-const HYDRO_DAILY_RATE = 0.000147438;            // BTC per TH per day
-const HYDRO_BASE_DAILY = HYDRO_N * HYDRO_THS * HYDRO_DAILY_RATE;  // 28 × 395 × 0.000147438 ≈ 1.62997 BTC/day
+const HYDRO_DAILY_RATE = 0.000147438;            // BTC per machine per day
+const HYDRO_BASE_DAILY = HYDRO_N * HYDRO_DAILY_RATE;              // 28 × 0.000147438 = 0.00412826 BTC/day
 
 const STD_N            = 220, STD_THS    = 100;
-const STD_DAILY_RATE   = 0.0000433438;           // BTC per TH per day
-const STD_BASE_DAILY   = STD_N * STD_THS * STD_DAILY_RATE;        // 220 × 100 × 0.0000433438 ≈ 0.953564 BTC/day
+const STD_DAILY_RATE   = 0.0000433438;           // BTC per machine per day
+const STD_BASE_DAILY   = STD_N * STD_DAILY_RATE;                  // 220 × 0.0000433438 = 0.00953564 BTC/day
 
 const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;   // 11,060 TH/s
 const BASE_HR_STD      = STD_N   * STD_THS;     // 22,000 TH/s
