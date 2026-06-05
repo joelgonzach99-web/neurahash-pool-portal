@@ -128,7 +128,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 <!-- ═══ LOGIN ═══════════════════════════════════════════════════════════════ -->
 <div id="login-page">
   <div class="login-box">
-    <img src="logo.png" alt="NeuraHash" class="login-logo"/>
+    <img src="logo.png" alt="NeuraHash" style="height:180px !important;object-fit:contain;display:block;margin:0 auto;">
     <div class="login-subtitle">Pool Portal — Acceso Inversores</div>
     <input type="password" id="token-input" class="login-input" placeholder="Token de acceso" autocomplete="off"/>
     <button class="login-btn" onclick="tryLogin()">Acceder →</button>
@@ -139,7 +139,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 <!-- ═══ DASHBOARD ══════════════════════════════════════════════════════════ -->
 <div id="dashboard">
   <nav class="navbar">
-    <img src="logo.png" alt="NeuraHash" class="nav-logo"/>
+    <img src="logo.png" alt="NeuraHash" style="height:90px !important;object-fit:contain;display:block;">
     <div class="nav-pills">
       <span class="pill" style="border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)">⚡ Hydro: <span id="nav-hydro-hr">11,060</span> TH/s</span>
       <span class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">22,000</span> TH/s</span>
@@ -154,7 +154,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <!-- HERO -->
     <div class="hero">
       <div class="hero-label">NeuraHash Pool Portal · <span id="hero-date">—</span><span id="timestamp" style="margin-left:16px;color:rgba(255,255,255,.12)"></span></div>
-      <h1 class="hero-title">Bienvenido, Pacalo.</h1>
+      <h1 class="hero-title">Bienvenido, Grupo Napal S.R.L.</h1>
       <p class="hero-sub">Flota Hydro (28 × S21 Hydro) + Flota Standard (220 × S19) — 33,060 TH/s base</p>
     </div>
 
@@ -464,12 +464,21 @@ async function fetchPrice(){
   try{
     const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
     const d=await r.json();
-    if(d?.bitcoin?.usd>0){btcPrice=d.bitcoin.usd;updatePriceControls();return;}
+    if(d?.bitcoin?.usd>0){
+      btcPrice=d.bitcoin.usd;
+      const inp=document.getElementById('btcInput'), sld=document.getElementById('btcSlider');
+      if(inp&&!manualBtcPrice){inp.value=Math.round(btcPrice);if(sld)sld.value=Math.min(Math.max(Math.round(btcPrice),30000),200000);}
+      return;
+    }
   }catch{}
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
     const d=await r.json();
-    if(Number(d?.price)>0){btcPrice=Number(d.price);updatePriceControls();}
+    if(Number(d?.price)>0){
+      btcPrice=Number(d.price);
+      const inp=document.getElementById('btcInput'), sld=document.getElementById('btcSlider');
+      if(inp&&!manualBtcPrice){inp.value=Math.round(btcPrice);if(sld)sld.value=Math.min(Math.max(Math.round(btcPrice),30000),200000);}
+    }
   }catch{}
 }
 
