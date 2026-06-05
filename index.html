@@ -4,6 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>NeuraHash Pool Portal</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -190,6 +192,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
       <button class="tab-btn" onclick="setTab('desembolsos',this)">Desembolsos</button>
+      <button class="tab-btn" onclick="setTab('gastos',this)">Gastos</button>
     </div>
 
     <!-- ── ESTIMACIONES ─────────────────────────────────────────── -->
@@ -308,22 +311,12 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── DESEMBOLSOS ──────────────────────────────────────────── -->
     <div id="pane-desembolsos" class="tab-pane" style="margin-top:20px">
-      <div class="g2" style="margin-top:0">
-        <div class="kpi-card">
-          <div class="kpi-label">Total Pacalo (Hydro + Standard)</div>
-          <div class="kpi-val cgreen" id="desemb-pacalo-btc">—</div>
-          <div class="kpi-sub" id="desemb-pacalo-usd">—</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Total Allan &amp; Enrique (Standard)</div>
-          <div class="kpi-val cblue" id="desemb-ae-btc">—</div>
-          <div class="kpi-sub" id="desemb-ae-usd">—</div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:10px">
-        <div class="card-title">Desglose de desembolsos — mes actual</div>
-        <div id="desembolsos-detail"></div>
-      </div>
+      <div id="desemb-content"></div>
+    </div>
+
+    <!-- ── GASTOS ──────────────────────────────────────────────── -->
+    <div id="pane-gastos" class="tab-pane" style="margin-top:20px">
+      <div id="gastos-content"></div>
     </div>
 
   </div><!-- /main -->
@@ -450,7 +443,7 @@ function boot(){
   renderWorkerTables();
   renderPagos();
   updateTimestamp();
-  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); if(activePane==='pagos') renderPagos(); }, 30000);
+  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); if(activePane==='pagos') renderPagos(); if(activePane==='gastos') renderGastos(); }, 30000);
   setInterval(fetchPrice, 60000);
 }
 
@@ -602,18 +595,38 @@ function renderAll(){
     <div class="rd"><span class="l">Allan &amp; Enrique (50%)</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
   `;
 
-  // Desembolsos tab
-  document.getElementById('desemb-pacalo-btc').textContent = f8(totalPacaloEst) + ' BTC';
-  document.getElementById('desemb-pacalo-usd').textContent = p > 0 ? usd(totalPacaloEst*p) : '—';
-  document.getElementById('desemb-ae-btc').textContent     = f8(stdAllanEst) + ' BTC';
-  document.getElementById('desemb-ae-usd').textContent     = p > 0 ? usd(stdAllanEst*p) : '—';
-  document.getElementById('desembolsos-detail').innerHTML = `
-    <div class="rd"><span class="l">Pacalo — Hydro (35% del hosting 20%)</span><span class="v cgreen">${f8(hydroPacaloEst)} BTC${usdOrDash(hydroPacaloEst)}</span></div>
-    <div class="rd"><span class="l">Pacalo — Standard (50% neto)</span><span class="v cgreen">${f8(stdPacaloEst)} BTC${usdOrDash(stdPacaloEst)}</span></div>
-    <div class="rd" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Pacalo</span><span class="v cgreen" style="font-size:15px;font-weight:700">${f8(totalPacaloEst)} BTC${usdOrDash(totalPacaloEst)}</span></div>
-    <div class="rd" style="margin-top:8px"><span class="l">Allan &amp; Enrique — Standard (50% neto)</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
-    <div class="rd" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Allan &amp; Enrique</span><span class="v cblue" style="font-size:15px;font-weight:700">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
-  `;
+  // Desembolsos tab (gated)
+  const desembEl = document.getElementById('desemb-content');
+  if (desembEl) {
+    if (!POOL_START_DATE) {
+      desembEl.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px">
+        <div style="font-size:13px;color:rgba(255,255,255,.3);line-height:1.7">
+          En espera de activación — los desembolsos aparecerán aquí cuando el pool esté activo.</div></div>`;
+    } else {
+      desembEl.innerHTML = `
+        <div class="g2" style="margin-top:0">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Pacalo (Hydro + Standard)</div>
+            <div class="kpi-val cgreen">${f8(totalPacaloEst)} BTC</div>
+            <div class="kpi-sub">${p>0?usd(totalPacaloEst*p):'—'}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Allan &amp; Enrique (Standard)</div>
+            <div class="kpi-val cblue">${f8(stdAllanEst)} BTC</div>
+            <div class="kpi-sub">${p>0?usd(stdAllanEst*p):'—'}</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">Desglose de desembolsos — mes actual</div>
+          <div class="rd"><span class="l">Pacalo — Hydro (35% hosting 20%)</span><span class="v cgreen">${f8(hydroPacaloEst)} BTC${usdOrDash(hydroPacaloEst)}</span></div>
+          <div class="rd"><span class="l">Pacalo — Standard (50% neto)</span><span class="v cgreen">${f8(stdPacaloEst)} BTC${usdOrDash(stdPacaloEst)}</span></div>
+          <div class="rd" style="padding-top:12px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Pacalo</span><span class="v cgreen" style="font-size:15px;font-weight:700">${f8(totalPacaloEst)} BTC${usdOrDash(totalPacaloEst)}</span></div>
+          <div class="rd" style="margin-top:6px"><span class="l">Allan &amp; Enrique — Standard (50%)</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
+          <div class="rd" style="padding-top:12px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Allan &amp; Enrique</span><span class="v cblue" style="font-size:15px;font-weight:700">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
+          <div class="rd" style="margin-top:6px"><span class="l">NeuraHash — Hydro (65% hosting)</span><span class="v cgold">${f8(hydroNHEst)} BTC${usdOrDash(hydroNHEst)}</span></div>
+        </div>`;
+    }
+  }
 
   // Estimaciones tab
   const totalRow = (label, color, btcVal, usdVal) =>
@@ -742,6 +755,8 @@ function renderPagos(){
   const totalBTC    = days.reduce((a,r)=>a+r.total, 0);
   const daysActive  = days.length;
   const lastOfMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const allGastos   = loadGastos();
+  const totalGastos = allGastos.reduce((s,g)=>s+g.amount, 0);
 
   // Monthly groups
   const monthMap = {};
@@ -776,7 +791,7 @@ function renderPagos(){
   const uf   = (btc) => p > 0 ? usd(btc*p) : '—';
 
   el.innerHTML = `
-    <div class="g4" style="margin-top:0">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:0">
       <div class="kpi-card"><div class="ldot"></div>
         <div class="kpi-label">BTC acumulado total</div>
         <div class="kpi-val cgold">${f4(totalBTC)}</div>
@@ -797,6 +812,11 @@ function renderPagos(){
         <div class="kpi-val cgreen" style="font-size:16px">Día ${lastOfMonth}</div>
         <div class="kpi-sub">Fin de mes</div>
       </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total gastos registrados</div>
+        <div class="kpi-val cred">$${Math.round(totalGastos).toLocaleString()}</div>
+        <div class="kpi-sub">${allGastos.length} registros · ver Gastos</div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:10px;padding:0;overflow:visible">
@@ -807,18 +827,35 @@ function renderPagos(){
         <table class="wtable" style="min-width:580px">
           <thead><tr>
             <th>Fecha</th><th>Hydro BTC</th><th>Standard BTC</th>
-            <th>Total BTC</th><th>USD (en vivo)</th><th>Estado</th>
+            <th>Total BTC</th><th>USD (en vivo)</th><th>Estado</th><th>Gastos / Notas</th>
           </tr></thead>
           <tbody>
-            ${[...days].reverse().map((r,i)=>`
-              <tr style="${i%2===0?'background:rgba(255,255,255,.015)':''}">
+            ${[...days].reverse().map((r,i)=>{
+              const ds = r.day.toISOString().slice(0,10);
+              const dg = allGastos.filter(g=>g.date===ds);
+              const dgTotal = dg.reduce((s,g)=>s+g.amount,0);
+              return `<tr style="${i%2===0?'background:rgba(255,255,255,.015)':''}">
                 <td style="color:rgba(255,255,255,.55)">${fmtD(r.day)}</td>
                 <td class="cgold">${f8(r.hydroBTC)}</td>
                 <td class="cgreen">${f8(r.stdBTC)}</td>
                 <td style="color:#fff;font-weight:600">${f8(r.total)}</td>
                 <td class="cgreen">${uf(r.total)}</td>
                 <td>${badge(r.status)}</td>
-              </tr>`).join('')}
+                <td style="min-width:160px;vertical-align:top;padding-top:8px">
+                  ${dg.map(g=>`<div style="color:#ef4444;font-size:10px;margin-bottom:1px">${g.desc} <span style="opacity:.7">$${Math.round(g.amount)}</span></div>`).join('')}
+                  ${dg.length>0?`<div style="color:#ef4444;font-size:10px;font-weight:700;border-top:1px solid rgba(239,68,68,.2);padding-top:2px;margin-top:2px">$${Math.round(dgTotal).toLocaleString()}</div>`:''}
+                  <div id="gi-form-${ds}" style="display:none;margin-top:4px">
+                    <input id="gi-desc-${ds}" placeholder="Descripción" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;margin-bottom:3px;font-family:'Inter',sans-serif">
+                    <div style="display:flex;gap:4px">
+                      <input id="gi-amt-${ds}" type="number" placeholder="$USD" style="width:70px;background:#0a0a0a;border:1px solid #333;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;font-family:'DM Mono',monospace">
+                      <button onclick="saveGastoInline('${ds}')" style="background:#7f1d1d;border:1px solid #ef4444;color:#ef4444;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">✓</button>
+                      <button onclick="toggleGastoForm('${ds}')" style="background:#111;border:1px solid #333;color:#666;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">✕</button>
+                    </div>
+                  </div>
+                  <button onclick="toggleGastoForm('${ds}')" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);padding:1px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-top:3px">＋</button>
+                </td>
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -1000,6 +1037,130 @@ function drawProdChart(){
   });
 })();
 
+// ═══ GASTOS MODULE ════════════════════════════════════════════════
+const GASTOS_KEY = 'nh_gastos_v2';
+function loadGastos(){ return JSON.parse(localStorage.getItem(GASTOS_KEY)||'[]'); }
+function saveGastos(d){ localStorage.setItem(GASTOS_KEY, JSON.stringify(d)); }
+function addGasto(g){ const d=loadGastos(); d.push({...g,id:Date.now()+'_'+Math.random().toString(36).slice(2,6)}); saveGastos(d); }
+function delGasto(id){ saveGastos(loadGastos().filter(g=>g.id!==id)); }
+
+function toggleGastoForm(date){
+  const f=document.getElementById('gi-form-'+date);
+  if(f) f.style.display = f.style.display==='none'?'block':'none';
+}
+function saveGastoInline(date){
+  const d=document.getElementById('gi-desc-'+date), a=document.getElementById('gi-amt-'+date);
+  if(!d||!a) return;
+  const desc=d.value.trim(), amt=parseFloat(a.value);
+  if(!desc||isNaN(amt)||amt<=0) return;
+  addGasto({date,category:'Operativo',desc,amount:amt});
+  renderPagos();
+}
+function deleteGastoAndRefresh(id){
+  delGasto(id);
+  if(activePane==='pagos') renderPagos();
+  renderGastos();
+}
+function submitGastoForm(){
+  const date=document.getElementById('gasto-date').value;
+  const cat=document.getElementById('gasto-cat').value;
+  const desc=document.getElementById('gasto-desc').value.trim();
+  const amount=parseFloat(document.getElementById('gasto-amount').value);
+  if(!date||!desc||isNaN(amount)||amount<=0) return;
+  addGasto({date,category:cat,desc,amount});
+  document.getElementById('gasto-desc').value='';
+  document.getElementById('gasto-amount').value='';
+  renderGastos();
+  if(activePane==='pagos') renderPagos();
+}
+function exportGastosCsv(){
+  const all=loadGastos().sort((a,b)=>a.date.localeCompare(b.date));
+  const rows=[['Fecha','Categoría','Descripción','Monto USD'],...all.map(g=>[g.date,g.category,'"'+g.desc+'"',g.amount])];
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='gastos_neurahash.csv'; a.click(); URL.revokeObjectURL(url);
+}
+function renderGastos(){
+  const el=document.getElementById('gastos-content');
+  if(!el) return;
+  const all=loadGastos().sort((a,b)=>b.date.localeCompare(a.date));
+  const pEst=getEffectiveBtcPrice();
+  const cats=['Energía','Personal','Mantenimiento','Otro'];
+  const today=new Date().toISOString().slice(0,10);
+  const totalUSD=all.reduce((s,g)=>s+g.amount,0);
+  const monthly={};
+  for(const g of all){
+    const ym=g.date.slice(0,7);
+    if(!monthly[ym]) monthly[ym]={};
+    monthly[ym][g.category]=(monthly[ym][g.category]||0)+g.amount;
+  }
+  el.innerHTML=`
+    <div class="card" style="border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.02)">
+      <div class="card-title" style="color:#ef4444">Registrar nuevo gasto</div>
+      <div style="display:grid;grid-template-columns:140px 160px 1fr 110px auto;gap:8px;align-items:center">
+        <input type="date" id="gasto-date" value="${today}" style="background:#111;border:1px solid #333;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;font-family:'Inter',sans-serif">
+        <select id="gasto-cat" style="background:#111;border:1px solid #333;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;font-family:'Inter',sans-serif">
+          ${cats.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+        <input type="text" id="gasto-desc" placeholder="Descripción" style="background:#111;border:1px solid #333;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;font-family:'Inter',sans-serif">
+        <input type="number" id="gasto-amount" placeholder="USD" min="0" step="1" style="background:#111;border:1px solid #333;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;font-family:'DM Mono',monospace;text-align:right">
+        <button onclick="submitGastoForm()" style="background:#7f1d1d;border:1px solid #ef4444;color:#ef4444;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">+ Guardar</button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:stretch;gap:10px;margin-top:10px">
+      <div style="display:flex;gap:10px">
+        <div class="kpi-card" style="min-width:160px">
+          <div class="kpi-label">Total gastos</div>
+          <div class="kpi-val cred">$${Math.round(totalUSD).toLocaleString()}</div>
+          <div class="kpi-sub">${all.length} registros</div>
+        </div>
+        <div class="kpi-card" style="min-width:160px">
+          <div class="kpi-label">Promedio mensual</div>
+          <div class="kpi-val">${Object.keys(monthly).length>0?'$'+Math.round(totalUSD/Object.keys(monthly).length).toLocaleString():'—'}</div>
+          <div class="kpi-sub">por mes</div>
+        </div>
+      </div>
+      <button onclick="exportGastosCsv()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;align-self:center">↓ Exportar CSV</button>
+    </div>
+    <div class="card" style="margin-top:10px;padding:0;overflow:visible">
+      <div style="padding:14px 20px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div class="card-title" style="margin-bottom:0">Historial de gastos</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="wtable" style="min-width:500px">
+          <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th style="text-align:right">Monto USD</th><th></th></tr></thead>
+          <tbody>
+            ${all.length===0?'<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.2);padding:24px">Sin registros aún</td></tr>':
+              all.map((g,i)=>`<tr style="${i%2===0?'background:rgba(255,255,255,.015)':''}">
+                <td style="color:rgba(255,255,255,.55)">${g.date}</td>
+                <td style="color:rgba(255,255,255,.35);font-size:11px">${g.category}</td>
+                <td style="color:rgba(255,255,255,.7)">${g.desc}</td>
+                <td style="text-align:right" class="cred">$${Math.round(g.amount).toLocaleString()}</td>
+                <td style="text-align:center"><button onclick="deleteGastoAndRefresh('${g.id}')" style="background:transparent;border:none;color:rgba(239,68,68,.4);cursor:pointer;font-size:13px;padding:2px 6px" title="Eliminar">✕</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    ${Object.keys(monthly).length===0?'':
+    `<div class="card" style="margin-top:10px">
+      <div class="card-title">Resumen por mes y categoría</div>
+      <table class="wtable">
+        <thead><tr><th>Mes</th>${cats.map(c=>`<th>${c}</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
+        <tbody>
+          ${Object.keys(monthly).sort((a,b)=>b.localeCompare(a)).map(ym=>{
+            const m=monthly[ym], tot=Object.values(m).reduce((s,v)=>s+v,0);
+            const [yr,mo]=ym.split('-');
+            const ml=new Date(+yr,+mo-1,1).toLocaleDateString('es-PY',{month:'long',year:'numeric'});
+            return `<tr><td style="color:rgba(255,255,255,.55)">${ml}</td>${cats.map(c=>`<td class="${m[c]?'cred':''}">${m[c]?'$'+Math.round(m[c]).toLocaleString():'—'}</td>`).join('')}<td style="text-align:right" class="cred" style="font-weight:700">$${Math.round(tot).toLocaleString()}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`}
+  `;
+}
+
 // ═══ TABS ═════════════════════════════════════════════════════════
 function setTab(id, btn){
   activePane = id;
@@ -1011,6 +1172,8 @@ function setTab(id, btn){
     if(id==='hydro')      drawHydroChart();
     if(id==='standard')   drawStdChart();
     if(id==='produccion') drawProdChart();
+    if(id==='pagos')      renderPagos();
+    if(id==='gastos')     renderGastos();
   }, 60);
 }
 </script>
