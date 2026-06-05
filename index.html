@@ -190,7 +190,33 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── OVERVIEW ───────────────────────────────────────────── -->
     <div id="pane-overview" class="tab-pane active" style="margin-top:20px">
-      <div class="g2" style="margin-top:0">
+
+      <!-- EARNINGS SPLIT ROW -->
+      <div class="g3" style="margin-top:0">
+        <div class="card" style="border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.02);margin-top:0">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace;margin-bottom:6px">⚡ Flota Hydro</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">28 × S21 Hydro · 11,060 TH/s</div>
+          <div class="rd"><span class="l">BTC hoy</span><span class="v cgold" id="ec-h-today">—</span></div>
+          <div class="rd"><span class="l">BTC este mes</span><span class="v cgold" id="ec-h-month">—</span></div>
+          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-h-usd">—</span></div>
+        </div>
+        <div class="card" style="border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.02);margin-top:0">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace;margin-bottom:6px">⛏ Flota Standard</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">220 × S19 · 22,000 TH/s</div>
+          <div class="rd"><span class="l">BTC hoy</span><span class="v cgreen" id="ec-s-today">—</span></div>
+          <div class="rd"><span class="l">BTC este mes</span><span class="v cgreen" id="ec-s-month">—</span></div>
+          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-s-usd">—</span></div>
+        </div>
+        <div class="card" style="border-color:rgba(255,255,255,.18);margin-top:0">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;margin-bottom:6px">∑ Total Combinado</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">248 workers · 33,060 TH/s</div>
+          <div class="rd"><span class="l">BTC hoy</span><span class="v cgold" id="ec-t-today">—</span></div>
+          <div class="rd"><span class="l">BTC este mes</span><span class="v cgold" id="ec-t-month">—</span></div>
+          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-t-usd">—</span></div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-top:10px">
         <div class="fleet-card hydro">
           <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace">⚡ Flota Hydro — Antminer S21 Hydro</div>
           <div class="fleet-hr cgold" id="ov-hydro-hr">—</div>
@@ -439,6 +465,10 @@ function renderAll(){
   const btcToday   = TOTAL_DAILY_BTC * (hrsFrac/24);
   const btcMonth   = TOTAL_DAILY_BTC * daysEl;
   const btcEOM     = TOTAL_DAILY_BTC * daysInMo;
+  const hydroToday = HYDRO_DAILY_BTC * (hrsFrac/24);
+  const hydroMonth = HYDRO_DAILY_BTC * daysEl;
+  const stdToday   = STD_DAILY_BTC   * (hrsFrac/24);
+  const stdMonth   = STD_DAILY_BTC   * daysEl;
   const pFmt       = btcPrice>0 ? '$'+Math.round(btcPrice).toLocaleString() : '—';
 
   // Navbar
@@ -456,6 +486,19 @@ function renderAll(){
   document.getElementById('kpi-month').textContent     = f4(btcMonth) + ' BTC';
   document.getElementById('kpi-month-usd').textContent = btcPrice>0 ? usd(btcMonth*btcPrice) : '—';
   document.getElementById('kpi-price').textContent     = pFmt;
+
+  // Earnings split cards
+  document.getElementById('ec-h-today').textContent = f4(hydroToday) + ' BTC';
+  document.getElementById('ec-h-month').textContent = f4(hydroMonth) + ' BTC';
+  document.getElementById('ec-s-today').textContent = f4(stdToday)   + ' BTC';
+  document.getElementById('ec-s-month').textContent = f4(stdMonth)   + ' BTC';
+  document.getElementById('ec-t-today').textContent = f4(btcToday)   + ' BTC';
+  document.getElementById('ec-t-month').textContent = f4(btcMonth)   + ' BTC';
+  if(btcPrice>0){
+    document.getElementById('ec-h-usd').textContent = usd(hydroMonth * btcPrice);
+    document.getElementById('ec-s-usd').textContent = usd(stdMonth   * btcPrice);
+    document.getElementById('ec-t-usd').textContent = usd(btcMonth   * btcPrice);
+  }
 
   // Overview fleet cards
   document.getElementById('ov-hydro-hr').textContent     = thr(hydroHR);
