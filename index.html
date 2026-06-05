@@ -139,9 +139,10 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
   <nav class="navbar">
     <img src="logo.png" alt="NeuraHash" class="nav-logo"/>
     <div class="nav-pills">
-      <span class="pill live"><span class="pdot"></span><span id="nav-hr">—</span> TH/s</span>
-      <span class="pill">BTC <span id="nav-price" style="margin-left:4px">—</span></span>
+      <span class="pill" style="border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)">⚡ Hydro: <span id="nav-hydro-hr">11,060</span> TH/s</span>
+      <span class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">22,000</span> TH/s</span>
       <span class="pill">248 workers</span>
+      <span class="pill">BTC <span id="nav-price" style="margin-left:4px">—</span></span>
       <button class="logout-btn" onclick="logout()">Salir</button>
     </div>
   </nav>
@@ -189,14 +190,19 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── HYDRO FLEET ─────────────────────────────────────────── -->
     <div id="pane-hydro" class="tab-pane active" style="margin-top:20px">
-      <div class="g3" style="margin-top:0">
-        <div class="kpi-card"><div class="kpi-label">Hashrate Flota Hydro</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro</div></div>
-        <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="hf-online">—</div><div class="kpi-sub">de 28 total</div></div>
-        <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgold">2.08552</div><div class="kpi-sub">bruto estimado</div></div>
+      <div class="g4" style="margin-top:0">
+        <div class="kpi-card"><div class="ldot"></div><div class="kpi-label">Hashrate Flota Hydro</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro · 395 TH/s</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto hoy</div><div class="kpi-val cgold" id="hf-btc-today">—</div><div class="kpi-sub" id="hf-btc-today-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto mes</div><div class="kpi-val cgold" id="hf-btc-month">—</div><div class="kpi-sub" id="hf-btc-month-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">USD equivalente</div><div class="kpi-val cgreen" id="hf-usd">—</div><div class="kpi-sub">BTC mes × precio actual</div></div>
       </div>
       <div class="card">
         <div class="card-title">Hashrate últimas 24h — Flota Hydro (TH/s)</div>
         <div class="chart-wrap"><canvas id="chart-hydro"></canvas></div>
+      </div>
+      <div class="card" style="border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.02)">
+        <div class="card-title" style="color:#d4af37">Estructura de Fees — Flota Hydro</div>
+        <div id="hydro-fee-detail"></div>
       </div>
       <div style="margin-top:10px">
         <div class="wtable-wrap">
@@ -210,10 +216,11 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── STANDARD FLEET ─────────────────────────────────────── -->
     <div id="pane-standard" class="tab-pane" style="margin-top:20px">
-      <div class="g3" style="margin-top:0">
-        <div class="kpi-card"><div class="kpi-label">Hashrate Flota Standard</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">220 × S19</div></div>
-        <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="sf-online">—</div><div class="kpi-sub">de 220 total</div></div>
-        <div class="kpi-card"><div class="kpi-label">BTC bruto / día</div><div class="kpi-val cgreen">4.14842</div><div class="kpi-sub">bruto estimado</div></div>
+      <div class="g4" style="margin-top:0">
+        <div class="kpi-card"><div class="ldot"></div><div class="kpi-label">Hashrate Flota Standard</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">220 × S19 · 100 TH/s</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto hoy</div><div class="kpi-val cgreen" id="sf-btc-today">—</div><div class="kpi-sub" id="sf-btc-today-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">BTC bruto mes</div><div class="kpi-val cgreen" id="sf-btc-month">—</div><div class="kpi-sub" id="sf-btc-month-sub">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">USD equivalente</div><div class="kpi-val cgreen" id="sf-usd">—</div><div class="kpi-sub">BTC mes × precio actual</div></div>
       </div>
       <div class="card">
         <div class="card-title">Hashrate últimas 24h — Flota Standard (TH/s)</div>
@@ -260,14 +267,29 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 <script>
 // ═══ CONSTANTS ════════════════════════════════════════════════════
 const TOKEN            = "NHPool2026";
-const POOL_START_DATE  = null;                                      // null = not started yet; set to "2026-06-XX" to activate
+const POOL_START_DATE  = null;                   // null = not started; set to "2026-06-XX" to activate
+
 const HYDRO_N          = 28,  HYDRO_THS  = 395;
+const HYDRO_DAILY_RATE = 0.000147438;            // BTC per TH per day
+const HYDRO_BASE_DAILY = HYDRO_N * HYDRO_THS * HYDRO_DAILY_RATE;  // 28 × 395 × 0.000147438 ≈ 1.62997 BTC/day
+
 const STD_N            = 220, STD_THS    = 100;
-const HYDRO_DAILY_BTC  = 2.08552;
-const STD_DAILY_BTC    = STD_N * STD_THS * 0.0000433438;           // 220 × 100 × 0.0000433438 = 0.953564 BTC/day
-const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC + STD_DAILY_BTC;          // ~3.039 BTC/day
-const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;  // 11,060 TH/s
-const BASE_HR_STD      = STD_N   * STD_THS;    // 22,000 TH/s
+const STD_DAILY_RATE   = 0.0000433438;           // BTC per TH per day
+const STD_BASE_DAILY   = STD_N * STD_THS * STD_DAILY_RATE;        // 220 × 100 × 0.0000433438 ≈ 0.953564 BTC/day
+
+const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;   // 11,060 TH/s
+const BASE_HR_STD      = STD_N   * STD_THS;     // 22,000 TH/s
+
+function dailyVariation(seed){
+  const d = new Date();
+  const daySeed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate() + seed;
+  const x = Math.sin(daySeed) * 10000;
+  return 0.98 + (x - Math.floor(x)) * 0.04;    // 0.98 to 1.02
+}
+
+const HYDRO_DAILY_BTC  = HYDRO_BASE_DAILY * dailyVariation(1);
+const STD_DAILY_BTC    = STD_BASE_DAILY   * dailyVariation(2);
+const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC  + STD_DAILY_BTC;
 
 // ═══ STAR CANVAS ═════════════════════════════════════════════════
 (function(){
@@ -371,20 +393,21 @@ async function fetchPrice(){
 
 // ═══ WORKER GENERATION ═══════════════════════════════════════════
 function genWorkers(){
-  function makeFleet(n, baseThs, prefix){
+  function makeFleet(n, baseThs, prefix, seedOffset){
     const nOff = Math.random()<.08 ? Math.floor(Math.random()*Math.min(3,n*.02)+1) : 0;
     const offSet = new Set();
     while(offSet.size<nOff) offSet.add(Math.floor(Math.random()*n));
     return Array.from({length:n},(_,i)=>{
       const on = !offSet.has(i);
-      const hr = on ? rv(baseThs,.05) : 0;
+      const workerBase = baseThs * dailyVariation(seedOffset + i);
+      const hr = on ? rv(workerBase, .05) : 0;
       const now = new Date();
       now.setSeconds(now.getSeconds()-(Math.floor(Math.random()*90)+5));
       return { name:`${prefix}${String(i+1).padStart(prefix==='s19-'?3:2,'0')}`, hr, on, ls:on?tf(now):'—', eff:on?(94+Math.random()*5).toFixed(1)+'%':'—' };
     });
   }
-  hydroW  = makeFleet(HYDRO_N, HYDRO_THS, 's21h-');
-  stdW    = makeFleet(STD_N,   STD_THS,   's19-');
+  hydroW  = makeFleet(HYDRO_N, HYDRO_THS, 's21h-', 100);
+  stdW    = makeFleet(STD_N,   STD_THS,   's19-',  200);
   hydroHR = hydroW.reduce((a,w)=>a+w.hr,0);
   stdHR   = stdW.reduce((a,w)=>a+w.hr,0);
   hydroOnl= hydroW.filter(w=>w.on).length;
@@ -419,8 +442,9 @@ function renderAll(){
   const activationSub = 'En espera de activación';
 
   // Navbar
-  document.getElementById('nav-hr').textContent    = Math.round(totalHR).toLocaleString();
-  document.getElementById('nav-price').textContent = pFmt;
+  document.getElementById('nav-hydro-hr').textContent = Math.round(hydroHR).toLocaleString();
+  document.getElementById('nav-std-hr').textContent   = Math.round(stdHR).toLocaleString();
+  document.getElementById('nav-price').textContent    = pFmt;
 
   // Hero
   document.getElementById('hero-date').textContent  = now.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
@@ -434,11 +458,38 @@ function renderAll(){
   document.getElementById('kpi-month-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcMonth*btcPrice) : '—');
   document.getElementById('kpi-price').textContent     = pFmt;
 
-  // Hydro / Std fleet tabs
-  document.getElementById('hf-hr').textContent     = thr(hydroHR);
-  document.getElementById('hf-online').textContent = String(hydroOnl);
-  document.getElementById('sf-hr').textContent     = thr(stdHR);
-  document.getElementById('sf-online').textContent = String(stdOnl);
+  // Hydro fleet tab KPIs
+  document.getElementById('hf-hr').textContent            = thr(hydroHR);
+  document.getElementById('hf-btc-today').textContent     = f8(hydroToday) + ' BTC';
+  document.getElementById('hf-btc-month').textContent     = f8(hydroMonth) + ' BTC';
+  document.getElementById('hf-btc-today-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(hydroToday*btcPrice) : '—');
+  document.getElementById('hf-btc-month-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(hydroMonth*btcPrice) : '—');
+  document.getElementById('hf-usd').textContent           = (!poolActive || !btcPrice) ? '—' : usd(hydroMonth*btcPrice);
+
+  // Hydro fee card
+  if (poolActive) {
+    const hostingBTC = hydroMonth * 0.07;
+    const pocaloBTC  = hostingBTC * 0.30;
+    const netoBTC    = hostingBTC * 0.70;
+    const p = btcPrice;
+    document.getElementById('hydro-fee-detail').innerHTML = `
+      <div class="rd"><span class="l">Producción bruta mes</span><span class="v cgold">${f8(hydroMonth)} BTC${p>0?' / '+usd(hydroMonth*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Fee NeuraHash (7%)</span><span class="v cred">-${f8(hostingBTC)} BTC${p>0?' / -'+usd(hostingBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Participación Pacalo (30% del fee)</span><span class="v cgreen">${f8(pocaloBTC)} BTC${p>0?' / '+usd(pocaloBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">BTC neto operador (70% del fee)</span><span class="v cgold">${f8(netoBTC)} BTC${p>0?' / '+usd(netoBTC*p)+' USD':''}</span></div>
+    `;
+  } else {
+    document.getElementById('hydro-fee-detail').innerHTML =
+      `<div class="rd"><span class="l">Estado</span><span class="v cred">En espera de activación</span></div>`;
+  }
+
+  // Standard fleet tab KPIs
+  document.getElementById('sf-hr').textContent            = thr(stdHR);
+  document.getElementById('sf-btc-today').textContent     = f8(stdToday) + ' BTC';
+  document.getElementById('sf-btc-month').textContent     = f8(stdMonth) + ' BTC';
+  document.getElementById('sf-btc-today-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(stdToday*btcPrice) : '—');
+  document.getElementById('sf-btc-month-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(stdMonth*btcPrice) : '—');
+  document.getElementById('sf-usd').textContent           = (!poolActive || !btcPrice) ? '—' : usd(stdMonth*btcPrice);
 
   // Production tab rows
   document.getElementById('prod-month').innerHTML = `
