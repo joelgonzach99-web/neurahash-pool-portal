@@ -112,6 +112,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 .cgold{color:#d4af37}
 .cgreen{color:#22c55e}
 .cred{color:#ef4444}
+.cblue{color:#3b82f6}
 
 /* ── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -186,6 +187,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       <button class="tab-btn" onclick="setTab('standard',this)">Flota Standard</button>
       <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
+      <button class="tab-btn" onclick="setTab('desembolsos',this)">Desembolsos</button>
     </div>
 
     <!-- ── HYDRO FLEET ─────────────────────────────────────────── -->
@@ -226,6 +228,10 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
         <div class="card-title">Hashrate últimas 24h — Flota Standard (TH/s)</div>
         <div class="chart-wrap"><canvas id="chart-std"></canvas></div>
       </div>
+      <div class="card" style="border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.02)">
+        <div class="card-title" style="color:#22c55e">Distribución — Flota Standard</div>
+        <div id="std-dist-detail"></div>
+      </div>
       <div style="margin-top:10px">
         <div class="wtable-wrap">
           <table class="wtable">
@@ -259,6 +265,26 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
         <div class="kpi-card"><div class="kpi-label">Próximo pago</div><div class="kpi-val cgreen" style="font-size:16px">Días 1-5</div><div class="kpi-sub">pago automático F2Pool</div></div>
       </div>
       <div class="card"><div class="card-title">Historial de pagos — últimos 6 meses</div><div id="pagos-list"></div></div>
+    </div>
+
+    <!-- ── DESEMBOLSOS ──────────────────────────────────────────── -->
+    <div id="pane-desembolsos" class="tab-pane" style="margin-top:20px">
+      <div class="g2" style="margin-top:0">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Pacalo (Hydro + Standard)</div>
+          <div class="kpi-val cgreen" id="desemb-pacalo-btc">—</div>
+          <div class="kpi-sub" id="desemb-pacalo-usd">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Allan &amp; Enrique (Standard)</div>
+          <div class="kpi-val cblue" id="desemb-ae-btc">—</div>
+          <div class="kpi-sub" id="desemb-ae-usd">—</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="card-title">Desglose de desembolsos — mes actual</div>
+        <div id="desembolsos-detail"></div>
+      </div>
     </div>
 
   </div><!-- /main -->
@@ -466,17 +492,24 @@ function renderAll(){
   document.getElementById('hf-btc-month-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(hydroMonth*btcPrice) : '—');
   document.getElementById('hf-usd').textContent           = (!poolActive || !btcPrice) ? '—' : usd(hydroMonth*btcPrice);
 
+  // Shared fee & distribution variables
+  const p                  = btcPrice;
+  const hydroHostingBTC    = hydroMonth * 0.07;
+  const hydroPacaloBTC     = hydroHostingBTC * 0.30;
+  const hydroNetoBTC       = hydroHostingBTC * 0.70;
+  const stdNeto            = stdMonth;
+  const stdPacaloBTC       = stdNeto * 0.50;
+  const stdAllanEnriqueBTC = stdNeto * 0.50;
+  const totalPacaloBTC     = hydroPacaloBTC + stdPacaloBTC;
+  const totalAllanEnriqueBTC = stdAllanEnriqueBTC;
+
   // Hydro fee card
   if (poolActive) {
-    const hostingBTC = hydroMonth * 0.07;
-    const pocaloBTC  = hostingBTC * 0.30;
-    const netoBTC    = hostingBTC * 0.70;
-    const p = btcPrice;
     document.getElementById('hydro-fee-detail').innerHTML = `
       <div class="rd"><span class="l">Producción bruta mes</span><span class="v cgold">${f8(hydroMonth)} BTC${p>0?' / '+usd(hydroMonth*p)+' USD':''}</span></div>
-      <div class="rd"><span class="l">Fee NeuraHash (7%)</span><span class="v cred">-${f8(hostingBTC)} BTC${p>0?' / -'+usd(hostingBTC*p)+' USD':''}</span></div>
-      <div class="rd"><span class="l">Participación Pacalo (30% del fee)</span><span class="v cgreen">${f8(pocaloBTC)} BTC${p>0?' / '+usd(pocaloBTC*p)+' USD':''}</span></div>
-      <div class="rd"><span class="l">BTC neto operador (70% del fee)</span><span class="v cgold">${f8(netoBTC)} BTC${p>0?' / '+usd(netoBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Fee NeuraHash (7%)</span><span class="v cred">-${f8(hydroHostingBTC)} BTC${p>0?' / -'+usd(hydroHostingBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Participación Pacalo (30% del fee)</span><span class="v cgreen">${f8(hydroPacaloBTC)} BTC${p>0?' / '+usd(hydroPacaloBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">BTC neto operador (70% del fee)</span><span class="v cgold">${f8(hydroNetoBTC)} BTC${p>0?' / '+usd(hydroNetoBTC*p)+' USD':''}</span></div>
     `;
   } else {
     document.getElementById('hydro-fee-detail').innerHTML =
@@ -487,9 +520,39 @@ function renderAll(){
   document.getElementById('sf-hr').textContent            = thr(stdHR);
   document.getElementById('sf-btc-today').textContent     = f8(stdToday) + ' BTC';
   document.getElementById('sf-btc-month').textContent     = f8(stdMonth) + ' BTC';
-  document.getElementById('sf-btc-today-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(stdToday*btcPrice) : '—');
-  document.getElementById('sf-btc-month-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(stdMonth*btcPrice) : '—');
-  document.getElementById('sf-usd').textContent           = (!poolActive || !btcPrice) ? '—' : usd(stdMonth*btcPrice);
+  document.getElementById('sf-btc-today-sub').textContent = !poolActive ? activationSub : (p>0 ? usd(stdToday*p) : '—');
+  document.getElementById('sf-btc-month-sub').textContent = !poolActive ? activationSub : (p>0 ? usd(stdMonth*p) : '—');
+  document.getElementById('sf-usd').textContent           = (!poolActive || !p) ? '—' : usd(stdMonth*p);
+
+  // Standard distribution card
+  if (poolActive) {
+    document.getElementById('std-dist-detail').innerHTML = `
+      <div class="rd"><span class="l">Producción bruta mes</span><span class="v cgreen">${f8(stdNeto)} BTC${p>0?' / '+usd(stdNeto*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Pacalo (50%)</span><span class="v cgreen">${f8(stdPacaloBTC)} BTC${p>0?' / '+usd(stdPacaloBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Allan &amp; Enrique (50%)</span><span class="v cblue">${f8(stdAllanEnriqueBTC)} BTC${p>0?' / '+usd(stdAllanEnriqueBTC*p)+' USD':''}</span></div>
+    `;
+  } else {
+    document.getElementById('std-dist-detail').innerHTML =
+      `<div class="rd"><span class="l">Estado</span><span class="v cred">En espera de activación</span></div>`;
+  }
+
+  // Desembolsos tab
+  document.getElementById('desemb-pacalo-btc').textContent = f8(totalPacaloBTC) + ' BTC';
+  document.getElementById('desemb-pacalo-usd').textContent = (!poolActive || !p) ? activationSub : usd(totalPacaloBTC*p);
+  document.getElementById('desemb-ae-btc').textContent     = f8(totalAllanEnriqueBTC) + ' BTC';
+  document.getElementById('desemb-ae-usd').textContent     = (!poolActive || !p) ? activationSub : usd(totalAllanEnriqueBTC*p);
+  if (poolActive) {
+    document.getElementById('desembolsos-detail').innerHTML = `
+      <div class="rd"><span class="l">Pacalo — Hydro (30% del fee 7%)</span><span class="v cgreen">${f8(hydroPacaloBTC)} BTC${p>0?' / '+usd(hydroPacaloBTC*p)+' USD':''}</span></div>
+      <div class="rd"><span class="l">Pacalo — Standard (50%)</span><span class="v cgreen">${f8(stdPacaloBTC)} BTC${p>0?' / '+usd(stdPacaloBTC*p)+' USD':''}</span></div>
+      <div class="rd" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Pacalo</span><span class="v cgreen" style="font-size:15px;font-weight:700">${f8(totalPacaloBTC)} BTC${p>0?' / '+usd(totalPacaloBTC*p)+' USD':''}</span></div>
+      <div class="rd" style="margin-top:8px"><span class="l">Allan &amp; Enrique — Standard (50%)</span><span class="v cblue">${f8(stdAllanEnriqueBTC)} BTC${p>0?' / '+usd(stdAllanEnriqueBTC*p)+' USD':''}</span></div>
+      <div class="rd" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Allan &amp; Enrique</span><span class="v cblue" style="font-size:15px;font-weight:700">${f8(totalAllanEnriqueBTC)} BTC${p>0?' / '+usd(totalAllanEnriqueBTC*p)+' USD':''}</span></div>
+    `;
+  } else {
+    document.getElementById('desembolsos-detail').innerHTML =
+      `<div class="rd"><span class="l">Estado</span><span class="v cred">En espera de activación</span></div>`;
+  }
 
   // Production tab rows
   document.getElementById('prod-month').innerHTML = `
