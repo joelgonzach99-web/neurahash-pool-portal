@@ -260,11 +260,12 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 <script>
 // ═══ CONSTANTS ════════════════════════════════════════════════════
 const TOKEN            = "NHPool2026";
+const POOL_START_DATE  = null;                                      // null = not started yet; set to "2026-06-XX" to activate
 const HYDRO_N          = 28,  HYDRO_THS  = 395;
 const STD_N            = 220, STD_THS    = 100;
 const HYDRO_DAILY_BTC  = 2.08552;
-const STD_DAILY_BTC    = 4.14842;
-const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC + STD_DAILY_BTC;  // 6.23394
+const STD_DAILY_BTC    = STD_N * STD_THS * 0.0000433438;           // 220 × 100 × 0.0000433438 = 0.953564 BTC/day
+const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC + STD_DAILY_BTC;          // ~3.039 BTC/day
 const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;  // 11,060 TH/s
 const BASE_HR_STD      = STD_N   * STD_THS;    // 22,000 TH/s
 
@@ -395,13 +396,27 @@ function renderAll(){
   const now = new Date();
   const totalHR    = hydroHR + stdHR;
   const totalOnl   = hydroOnl + stdOnl;
-  const daysEl     = now.getDate();
-  const daysInMo   = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  const hrsFrac    = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
-  const btcToday   = TOTAL_DAILY_BTC * (hrsFrac/24);
-  const btcMonth   = TOTAL_DAILY_BTC * daysEl;
-  const btcEOM     = TOTAL_DAILY_BTC * daysInMo;
-  const pFmt       = btcPrice>0 ? '$'+Math.round(btcPrice).toLocaleString() : '—';
+  const daysEl   = now.getDate();
+  const daysInMo = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  let btcToday, btcMonth, btcEOM, hydroToday, hydroMonth, stdToday, stdMonth;
+  const poolActive = POOL_START_DATE !== null;
+  if (!poolActive) {
+    btcToday = btcMonth = btcEOM = 0;
+    hydroToday = hydroMonth = stdToday = stdMonth = 0;
+  } else {
+    const msElapsed   = Date.now() - new Date(POOL_START_DATE).getTime();
+    const daysElapsed = msElapsed / (1000 * 60 * 60 * 24);
+    const dayFrac     = daysElapsed % 1;
+    btcToday   = TOTAL_DAILY_BTC * Math.min(dayFrac, 1);
+    btcMonth   = TOTAL_DAILY_BTC * Math.min(daysElapsed, 30);
+    btcEOM     = TOTAL_DAILY_BTC * daysInMo;
+    hydroToday = HYDRO_DAILY_BTC * Math.min(dayFrac, 1);
+    hydroMonth = HYDRO_DAILY_BTC * Math.min(daysElapsed, 30);
+    stdToday   = STD_DAILY_BTC   * Math.min(dayFrac, 1);
+    stdMonth   = STD_DAILY_BTC   * Math.min(daysElapsed, 30);
+  }
+  const pFmt = btcPrice>0 ? '$'+Math.round(btcPrice).toLocaleString() : '—';
+  const activationSub = 'En espera de activación';
 
   // Navbar
   document.getElementById('nav-hr').textContent    = Math.round(totalHR).toLocaleString();
@@ -413,10 +428,10 @@ function renderAll(){
   // KPI strip
   document.getElementById('kpi-hr').textContent        = thr(totalHR);
   document.getElementById('kpi-workers').textContent   = `${totalOnl} / ${HYDRO_N+STD_N} workers activos`;
-  document.getElementById('kpi-today').textContent     = f4(btcToday) + ' BTC';
-  document.getElementById('kpi-today-usd').textContent = btcPrice>0 ? usd(btcToday*btcPrice) : '—';
-  document.getElementById('kpi-month').textContent     = f4(btcMonth) + ' BTC';
-  document.getElementById('kpi-month-usd').textContent = btcPrice>0 ? usd(btcMonth*btcPrice) : '—';
+  document.getElementById('kpi-today').textContent     = f8(btcToday) + ' BTC';
+  document.getElementById('kpi-today-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcToday*btcPrice) : '—');
+  document.getElementById('kpi-month').textContent     = f8(btcMonth) + ' BTC';
+  document.getElementById('kpi-month-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcMonth*btcPrice) : '—');
   document.getElementById('kpi-price').textContent     = pFmt;
 
   // Hydro / Std fleet tabs
@@ -428,15 +443,15 @@ function renderAll(){
   // Production tab rows
   document.getElementById('prod-month').innerHTML = `
     <div class="rd"><span class="l">Período</span><span class="v">${now.toLocaleDateString('es-PY',{month:'long',year:'numeric'})}</span></div>
-    <div class="rd"><span class="l">Días transcurridos</span><span class="v">${daysEl} de ${daysInMo}</span></div>
-    <div class="rd"><span class="l">BTC acumulado (est.)</span><span class="v cgold">${f4(btcMonth)} BTC</span></div>
-    <div class="rd"><span class="l">USD equiv. (est.)</span><span class="v cgreen">${btcPrice>0?usd(btcMonth*btcPrice):'—'}</span></div>
+    <div class="rd"><span class="l">Estado</span><span class="v ${poolActive?'cgreen':'cred'}">${poolActive?'Activo':'En espera de activación'}</span></div>
+    <div class="rd"><span class="l">BTC acumulado (est.)</span><span class="v cgold">${f8(btcMonth)} BTC</span></div>
+    <div class="rd"><span class="l">USD equiv. (est.)</span><span class="v cgreen">${poolActive&&btcPrice>0?usd(btcMonth*btcPrice):'—'}</span></div>
     <div class="rd"><span class="l">Tasa diaria combinada</span><span class="v">${f4(TOTAL_DAILY_BTC)} BTC/día</span></div>
     <div class="rd"><span class="l">Workers activos</span><span class="v">${totalOnl} / ${HYDRO_N+STD_N}</span></div>
   `;
   document.getElementById('prod-proj').innerHTML = `
-    <div class="rd"><span class="l">BTC proyectado (${daysInMo} días)</span><span class="v cgold">${f4(btcEOM)} BTC</span></div>
-    <div class="rd"><span class="l">USD proyectado</span><span class="v cgreen">${btcPrice>0?usd(btcEOM*btcPrice):'—'}</span></div>
+    <div class="rd"><span class="l">BTC proyectado (${daysInMo} días)</span><span class="v cgold">${poolActive?f4(btcEOM)+' BTC':'—'}</span></div>
+    <div class="rd"><span class="l">USD proyectado</span><span class="v cgreen">${poolActive&&btcPrice>0?usd(btcEOM*btcPrice):'—'}</span></div>
     <div class="rd"><span class="l">Flota Hydro (30 días)</span><span class="v">${f4(HYDRO_DAILY_BTC*30)} BTC</span></div>
     <div class="rd"><span class="l">Flota Standard (30 días)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
     <div class="rd"><span class="l">Próximo pago F2Pool</span><span class="v cgreen">Días 1–5 del mes</span></div>
