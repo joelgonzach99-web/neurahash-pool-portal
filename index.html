@@ -189,7 +189,6 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       <button class="tab-btn active" onclick="setTab('estimaciones',this)">Estimaciones</button>
       <button class="tab-btn" onclick="setTab('hydro',this)">Flota Hydro</button>
       <button class="tab-btn" onclick="setTab('standard',this)">Flota Standard</button>
-      <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
       <button class="tab-btn" onclick="setTab('desembolsos',this)">Desembolsos</button>
       <button class="tab-btn" onclick="setTab('gastos',this)">Gastos</button>
@@ -290,20 +289,6 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     </div>
 
     <!-- ── PRODUCCIÓN ─────────────────────────────────────────── -->
-    <div id="pane-produccion" class="tab-pane" style="margin-top:20px">
-      <div class="card" style="margin-top:0">
-        <div class="card-title">BTC diario — últimos 30 días</div>
-        <div class="chart-wrap tall"><canvas id="chart-prod"></canvas></div>
-      </div>
-      <div class="g2">
-        <div class="card"><div class="card-title">Resumen mes actual</div><div id="prod-month"></div></div>
-        <div class="card" style="border-color:rgba(212,175,55,.2);background:rgba(212,175,55,.02)">
-          <div class="card-title" style="color:#d4af37">Proyección fin de mes</div>
-          <div id="prod-proj"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- ── PAGOS ──────────────────────────────────────────────── -->
     <div id="pane-pagos" class="tab-pane" style="margin-top:20px">
       <div id="pagos-content"></div>
@@ -680,22 +665,6 @@ function renderAll(){
     </div>
   `;
 
-  // Production tab rows
-  document.getElementById('prod-month').innerHTML = `
-    <div class="rd"><span class="l">Período</span><span class="v">${now.toLocaleDateString('es-PY',{month:'long',year:'numeric'})}</span></div>
-    <div class="rd"><span class="l">Estado</span><span class="v ${poolActive?'cgreen':'cred'}">${poolActive?'Activo':'En espera de activación'}</span></div>
-    <div class="rd"><span class="l">BTC acumulado (est.)</span><span class="v cgold">${f8(btcMonth)} BTC</span></div>
-    <div class="rd"><span class="l">USD equiv. (est.)</span><span class="v cgreen">${poolActive&&btcPrice>0?usd(btcMonth*btcPrice):'—'}</span></div>
-    <div class="rd"><span class="l">Tasa diaria combinada</span><span class="v">${f4(TOTAL_DAILY_BTC)} BTC/día</span></div>
-    <div class="rd"><span class="l">Workers activos</span><span class="v">${totalOnl} / ${HYDRO_N+STD_N}</span></div>
-  `;
-  document.getElementById('prod-proj').innerHTML = `
-    <div class="rd"><span class="l">BTC proyectado (${daysInMo} días)</span><span class="v cgold">${poolActive?f4(btcEOM)+' BTC':'—'}</span></div>
-    <div class="rd"><span class="l">USD proyectado</span><span class="v cgreen">${poolActive&&btcPrice>0?usd(btcEOM*btcPrice):'—'}</span></div>
-    <div class="rd"><span class="l">Flota Hydro (30 días)</span><span class="v">${f4(HYDRO_DAILY_BTC*30)} BTC</span></div>
-    <div class="rd"><span class="l">Flota Standard (30 días)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
-    <div class="rd"><span class="l">Próximo pago F2Pool</span><span class="v cgreen">Días 1–5 del mes</span></div>
-  `;
   if (activePane === 'pagos') renderPagos();
 }
 
@@ -1171,7 +1140,6 @@ function setTab(id, btn){
   setTimeout(()=>{
     if(id==='hydro')      drawHydroChart();
     if(id==='standard')   drawStdChart();
-    if(id==='produccion') drawProdChart();
     if(id==='pagos')      renderPagos();
     if(id==='gastos')     renderGastos();
   }, 60);
