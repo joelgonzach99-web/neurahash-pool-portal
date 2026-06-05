@@ -303,12 +303,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- ── PAGOS ──────────────────────────────────────────────── -->
     <div id="pane-pagos" class="tab-pane" style="margin-top:20px">
-      <div class="g3" style="margin-top:0">
-        <div class="kpi-card"><div class="kpi-label">Total pagado (6 meses)</div><div class="kpi-val cgold" id="pg-total-btc">—</div><div class="kpi-sub" id="pg-total-usd">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Pagos registrados</div><div class="kpi-val">6</div><div class="kpi-sub">pagos mensuales</div></div>
-        <div class="kpi-card"><div class="kpi-label">Próximo pago</div><div class="kpi-val cgreen" style="font-size:16px">Días 1-5</div><div class="kpi-sub">pago automático F2Pool</div></div>
-      </div>
-      <div class="card"><div class="card-title">Historial de pagos — últimos 6 meses</div><div id="pagos-list"></div></div>
+      <div id="pagos-content"></div>
     </div>
 
     <!-- ── DESEMBOLSOS ──────────────────────────────────────────── -->
@@ -455,7 +450,7 @@ function boot(){
   renderWorkerTables();
   renderPagos();
   updateTimestamp();
-  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); }, 30000);
+  setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); if(activePane==='pagos') renderPagos(); }, 30000);
   setInterval(fetchPrice, 60000);
 }
 
@@ -688,6 +683,7 @@ function renderAll(){
     <div class="rd"><span class="l">Flota Standard (30 días)</span><span class="v">${f4(STD_DAILY_BTC*30)} BTC</span></div>
     <div class="rd"><span class="l">Próximo pago F2Pool</span><span class="v cgreen">Días 1–5 del mes</span></div>
   `;
+  if (activePane === 'pagos') renderPagos();
 }
 
 // ═══ WORKER TABLES ═══════════════════════════════════════════════
@@ -705,33 +701,165 @@ function renderWorkerTables(){
 
 // ═══ PAYMENT HISTORY ════════════════════════════════════════════
 function renderPagos(){
-  const now   = new Date();
-  const prices = [97500,88000,79500,92000,104000,110000];
-  const payments = Array.from({length:6},(_,i)=>{
-    const d   = new Date(now.getFullYear(), now.getMonth()-5+i, 3);
-    const btc = +(TOTAL_DAILY_BTC*30*(1+(Math.random()-.5)*.08)).toFixed(6);
-    const p   = prices[i];
-    const chars='0123456789abcdef';
-    const tx  = Array.from({length:64},()=>chars[Math.floor(Math.random()*16)]).join('');
-    return {d,btc,usdVal:Math.round(btc*p),p,tx};
-  });
-  const totBtc = payments.reduce((a,p)=>a+p.btc,0);
-  const totUsd = payments.reduce((a,p)=>a+p.usdVal,0);
-  document.getElementById('pg-total-btc').textContent  = f4(totBtc)+' BTC';
-  document.getElementById('pg-total-usd').textContent  = usd(totUsd)+' USD total';
-  document.getElementById('pagos-list').innerHTML = [...payments].reverse().map(p=>`
-    <div class="prow">
-      <div>
-        <div class="pdate">${p.d.toLocaleDateString('es-PY',{day:'2-digit',month:'long',year:'numeric'})}</div>
-        <div class="ptx">${p.tx.slice(0,16)}...${p.tx.slice(-8)}</div>
+  const el = document.getElementById('pagos-content');
+  if (!el) return;
+  const p = getEffectiveBtcPrice();
+
+  if (!POOL_START_DATE) {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px">
+      <div style="font-size:13px;color:rgba(255,255,255,.3);line-height:1.7">
+        En espera de activación — los registros diarios aparecerán aquí cuando el pool esté activo.
+      </div></div>`;
+    return;
+  }
+
+  // Per-date seeded variation (uses the specific historical date, not today)
+  function dayVar(date, seed){
+    const s = date.getFullYear()*10000 + (date.getMonth()+1)*100 + date.getDate() + seed;
+    const x = Math.sin(s) * 10000;
+    return 0.98 + (x - Math.floor(x)) * 0.04;
+  }
+
+  const now    = new Date();
+  const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start  = new Date(POOL_START_DATE);
+  start.setHours(0,0,0,0);
+
+  // Build daily records
+  const days = [];
+  for (let d = new Date(start); d <= today; d.setDate(d.getDate()+1)) {
+    const day      = new Date(d);
+    const isToday  = day.getTime() === today.getTime();
+    const frac     = isToday ? (now.getHours()*3600+now.getMinutes()*60+now.getSeconds())/86400 : 1;
+    const hydroBTC = HYDRO_BASE_DAILY * dayVar(day, 1) * frac;
+    const stdBTC   = STD_BASE_DAILY   * dayVar(day, 2) * frac;
+    const isPast   = day.getFullYear() < now.getFullYear() ||
+                     (day.getFullYear()===now.getFullYear() && day.getMonth() < now.getMonth());
+    days.push({ day, hydroBTC, stdBTC, total: hydroBTC+stdBTC,
+                status: isToday ? 'en-curso' : (isPast ? 'pagado' : 'acumulado') });
+  }
+
+  const totalBTC    = days.reduce((a,r)=>a+r.total, 0);
+  const daysActive  = days.length;
+  const lastOfMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+
+  // Monthly groups
+  const monthMap = {};
+  for (const r of days){
+    const k = `${r.day.getFullYear()}-${r.day.getMonth()}`;
+    if (!monthMap[k]) monthMap[k] = { date: new Date(r.day.getFullYear(), r.day.getMonth(), 1), btc: 0, isPast: r.status==='pagado' };
+    monthMap[k].btc += r.total;
+  }
+
+  // Current-month distribution running totals
+  const cmDays = days.filter(r => r.day.getMonth()===now.getMonth() && r.day.getFullYear()===now.getFullYear());
+  const cmHydro = cmDays.reduce((a,r)=>a+r.hydroBTC, 0);
+  const cmStd   = cmDays.reduce((a,r)=>a+r.stdBTC,   0);
+  const dInMonth = cmDays.length || 1;
+  const cmHydroEnrg   = p > 0 ? HYDRO_ENERGIA / 30.41 * dInMonth / p : 0;
+  const cmHydroOper   = cmHydro - cmHydroEnrg;
+  const cmHydroHost   = cmHydroOper * 0.20;
+  const cmHydroPacalo = cmHydroHost * 0.35;
+  const cmHydroNH     = cmHydroHost * 0.65;
+  const cmStdCosts    = p > 0 ? (STD_ENERGIA+STD_PERSONAL) / 30.41 * dInMonth / p : 0;
+  const cmStdNeto     = cmStd - cmStdCosts;
+  const cmStdPacalo   = cmStdNeto * 0.50;
+  const cmStdAllan    = cmStdNeto * 0.50;
+  const cmTotalPacalo = cmHydroPacalo + cmStdPacalo;
+
+  const badge = s => s==='en-curso'
+    ? `<span style="color:#3b82f6;font-size:11px">En curso ⟳</span>`
+    : s==='pagado'
+    ? `<span style="color:#22c55e;font-size:11px">Pagado ✓</span>`
+    : `<span style="color:#d4af37;font-size:11px">Acumulado</span>`;
+  const fmtD = d => d.toLocaleDateString('es-PY',{day:'2-digit',month:'short',year:'2-digit'});
+  const uf   = (btc) => p > 0 ? usd(btc*p) : '—';
+
+  el.innerHTML = `
+    <div class="g4" style="margin-top:0">
+      <div class="kpi-card"><div class="ldot"></div>
+        <div class="kpi-label">BTC acumulado total</div>
+        <div class="kpi-val cgold">${f4(totalBTC)}</div>
+        <div class="kpi-sub">${uf(totalBTC)}</div>
       </div>
-      <div style="text-align:right">
-        <div class="pbtc">+${f4(p.btc)} BTC</div>
-        <div class="pusd">${usd(p.usdVal)}</div>
-        <div class="pprice">@ $${Math.round(p.p).toLocaleString()}/BTC</div>
+      <div class="kpi-card">
+        <div class="kpi-label">USD equivalente</div>
+        <div class="kpi-val cgreen">${uf(totalBTC)}</div>
+        <div class="kpi-sub">Al precio actual</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Días activo</div>
+        <div class="kpi-val">${daysActive}</div>
+        <div class="kpi-sub">Desde ${start.toLocaleDateString('es-PY',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Próximo desembolso</div>
+        <div class="kpi-val cgreen" style="font-size:16px">Día ${lastOfMonth}</div>
+        <div class="kpi-sub">Fin de mes</div>
       </div>
     </div>
-  `).join('');
+
+    <div class="card" style="margin-top:10px;padding:0;overflow:visible">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div class="card-title" style="margin-bottom:0">Registro diario de producción</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="wtable" style="min-width:580px">
+          <thead><tr>
+            <th>Fecha</th><th>Hydro BTC</th><th>Standard BTC</th>
+            <th>Total BTC</th><th>USD (en vivo)</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            ${[...days].reverse().map((r,i)=>`
+              <tr style="${i%2===0?'background:rgba(255,255,255,.015)':''}">
+                <td style="color:rgba(255,255,255,.55)">${fmtD(r.day)}</td>
+                <td class="cgold">${f8(r.hydroBTC)}</td>
+                <td class="cgreen">${f8(r.stdBTC)}</td>
+                <td style="color:#fff;font-weight:600">${f8(r.total)}</td>
+                <td class="cgreen">${uf(r.total)}</td>
+                <td>${badge(r.status)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">Resumen mensual</div>
+      <table class="wtable">
+        <thead><tr><th>Mes</th><th>BTC total</th><th>USD total</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${Object.values(monthMap).reverse().map(m=>`
+            <tr>
+              <td style="color:rgba(255,255,255,.55)">${m.date.toLocaleDateString('es-PY',{month:'long',year:'numeric'})}</td>
+              <td class="${m.isPast?'cgreen':'cgold'}">${f4(m.btc)} BTC</td>
+              <td class="${m.isPast?'cgreen':'cgold'}">${uf(m.btc)}</td>
+              <td>${m.isPast?'<span style="color:#22c55e;font-size:11px">Pagado ✓</span>':'<span style="color:#d4af37;font-size:11px">Pendiente</span>'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:10px;border-color:rgba(255,255,255,.1)">
+      <div class="card-title">Distribución acumulada — mes actual</div>
+      <div class="g3" style="margin-top:0">
+        <div>
+          <div class="kpi-label">Pacalo (Hydro 35% + Std 50%)</div>
+          <div style="font-size:18px;font-weight:800;color:#22c55e;font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums">${f8(cmTotalPacalo)} BTC</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">${uf(cmTotalPacalo)}</div>
+        </div>
+        <div>
+          <div class="kpi-label">Allan &amp; Enrique (Std 50%)</div>
+          <div style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums">${f8(cmStdAllan)} BTC</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">${uf(cmStdAllan)}</div>
+        </div>
+        <div>
+          <div class="kpi-label">NeuraHash (Hydro 65% hosting)</div>
+          <div style="font-size:18px;font-weight:800;color:#d4af37;font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums">${f8(cmHydroNH)} BTC</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">${uf(cmHydroNH)}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 // ═══ CHART ENGINE ════════════════════════════════════════════════
