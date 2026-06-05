@@ -181,79 +181,14 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
 
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab-btn active" onclick="setTab('overview',this)">Resumen</button>
-      <button class="tab-btn" onclick="setTab('hydro',this)">Flota Hydro</button>
+      <button class="tab-btn active" onclick="setTab('hydro',this)">Flota Hydro</button>
       <button class="tab-btn" onclick="setTab('standard',this)">Flota Standard</button>
       <button class="tab-btn" onclick="setTab('produccion',this)">Producción</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
     </div>
 
-    <!-- ── OVERVIEW ───────────────────────────────────────────── -->
-    <div id="pane-overview" class="tab-pane active" style="margin-top:20px">
-
-      <!-- EARNINGS SPLIT ROW -->
-      <div class="g3" style="margin-top:0">
-        <div class="card" style="border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.02);margin-top:0">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace;margin-bottom:6px">⚡ Flota Hydro</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">28 × S21 Hydro · 11,060 TH/s</div>
-          <div class="rd"><span class="l">BTC hoy</span><span class="v cgold" id="ec-h-today">—</span></div>
-          <div class="rd"><span class="l">BTC este mes</span><span class="v cgold" id="ec-h-month">—</span></div>
-          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-h-usd">—</span></div>
-        </div>
-        <div class="card" style="border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.02);margin-top:0">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace;margin-bottom:6px">⛏ Flota Standard</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">220 × S19 · 22,000 TH/s</div>
-          <div class="rd"><span class="l">BTC hoy</span><span class="v cgreen" id="ec-s-today">—</span></div>
-          <div class="rd"><span class="l">BTC este mes</span><span class="v cgreen" id="ec-s-month">—</span></div>
-          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-s-usd">—</span></div>
-        </div>
-        <div class="card" style="border-color:rgba(255,255,255,.18);margin-top:0">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;margin-bottom:6px">∑ Total Combinado</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:14px">248 workers · 33,060 TH/s</div>
-          <div class="rd"><span class="l">BTC hoy</span><span class="v cgold" id="ec-t-today">—</span></div>
-          <div class="rd"><span class="l">BTC este mes</span><span class="v cgold" id="ec-t-month">—</span></div>
-          <div class="rd"><span class="l">USD equiv. (mes)</span><span class="v cgreen" id="ec-t-usd">—</span></div>
-        </div>
-      </div>
-
-      <div class="g2" style="margin-top:10px">
-        <div class="fleet-card hydro">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#d4af37;font-family:'DM Mono',monospace">⚡ Flota Hydro — Antminer S21 Hydro</div>
-          <div class="fleet-hr cgold" id="ov-hydro-hr">—</div>
-          <div class="fleet-sub" id="ov-hydro-status">—</div>
-          <div class="fr"><span class="l">Máquinas</span><span class="v">28 × Antminer S21 Hydro</span></div>
-          <div class="fr"><span class="l">Hashrate / máq.</span><span class="v">395 TH/s</span></div>
-          <div class="fr"><span class="l">Workers online</span><span class="v cgreen" id="ov-h-online">—</span></div>
-          <div class="fr"><span class="l">BTC bruto / día</span><span class="v cgold">2.08552 BTC</span></div>
-          <div class="fr"><span class="l">BTC bruto / mes</span><span class="v cgold">62.5656 BTC</span></div>
-          <div class="fr"><span class="l">USD / mes (est.)</span><span class="v cgreen" id="ov-h-usd">—</span></div>
-        </div>
-        <div class="fleet-card std">
-          <div style="font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#22c55e;font-family:'DM Mono',monospace">⛏ Flota Standard — Antminer S19</div>
-          <div class="fleet-hr cgreen" id="ov-std-hr">—</div>
-          <div class="fleet-sub" id="ov-std-status">—</div>
-          <div class="fr"><span class="l">Máquinas</span><span class="v">220 × Antminer S19</span></div>
-          <div class="fr"><span class="l">Hashrate / máq.</span><span class="v">100 TH/s</span></div>
-          <div class="fr"><span class="l">Workers online</span><span class="v cgreen" id="ov-s-online">—</span></div>
-          <div class="fr"><span class="l">BTC bruto / día</span><span class="v cgreen">4.14842 BTC</span></div>
-          <div class="fr"><span class="l">BTC bruto / mes</span><span class="v cgreen">124.4526 BTC</span></div>
-          <div class="fr"><span class="l">USD / mes (est.)</span><span class="v cgreen" id="ov-s-usd">—</span></div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:10px">
-        <div class="card-title">Totales combinados</div>
-        <div class="g4">
-          <div><div class="kpi-label">Hashrate total (en vivo)</div><div style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums" id="ov-total-hr">—</div></div>
-          <div><div class="kpi-label">BTC bruto / día</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">6.23394 BTC</div></div>
-          <div><div class="kpi-label">BTC bruto / mes (30d)</div><div style="font-size:20px;font-weight:800;color:#d4af37;font-variant-numeric:tabular-nums">187.018 BTC</div></div>
-          <div><div class="kpi-label">USD / mes (est.)</div><div style="font-size:20px;font-weight:800;color:#22c55e;font-variant-numeric:tabular-nums" id="ov-usd-month">—</div></div>
-        </div>
-      </div>
-    </div>
-
     <!-- ── HYDRO FLEET ─────────────────────────────────────────── -->
-    <div id="pane-hydro" class="tab-pane" style="margin-top:20px">
+    <div id="pane-hydro" class="tab-pane active" style="margin-top:20px">
       <div class="g3" style="margin-top:0">
         <div class="kpi-card"><div class="kpi-label">Hashrate Flota Hydro</div><div class="kpi-val cgold" id="hf-hr">—</div><div class="kpi-sub">28 × S21 Hydro</div></div>
         <div class="kpi-card"><div class="kpi-label">Workers online</div><div class="kpi-val cgreen" id="hf-online">—</div><div class="kpi-sub">de 28 total</div></div>
@@ -366,7 +301,7 @@ let hydroHR    = BASE_HR_HYDRO;
 let stdHR      = BASE_HR_STD;
 let hydroOnl   = HYDRO_N;
 let stdOnl     = STD_N;
-let activePane = 'overview';
+let activePane = 'hydro';
 
 // ═══ HELPERS ════════════════════════════════════════════════════
 const f8  = n => Number(n).toFixed(8);
@@ -414,6 +349,7 @@ function boot(){
   renderWorkerTables();
   renderPagos();
   updateTimestamp();
+  setTimeout(drawHydroChart, 60);
   setInterval(()=>{ genWorkers(); renderAll(); renderWorkerTables(); updateTimestamp(); if(activePane==='hydro') drawHydroChart(); if(activePane==='standard') drawStdChart(); }, 30000);
   setInterval(fetchPrice, 60000);
 }
@@ -465,10 +401,6 @@ function renderAll(){
   const btcToday   = TOTAL_DAILY_BTC * (hrsFrac/24);
   const btcMonth   = TOTAL_DAILY_BTC * daysEl;
   const btcEOM     = TOTAL_DAILY_BTC * daysInMo;
-  const hydroToday = HYDRO_DAILY_BTC * (hrsFrac/24);
-  const hydroMonth = HYDRO_DAILY_BTC * daysEl;
-  const stdToday   = STD_DAILY_BTC   * (hrsFrac/24);
-  const stdMonth   = STD_DAILY_BTC   * daysEl;
   const pFmt       = btcPrice>0 ? '$'+Math.round(btcPrice).toLocaleString() : '—';
 
   // Navbar
@@ -486,33 +418,6 @@ function renderAll(){
   document.getElementById('kpi-month').textContent     = f4(btcMonth) + ' BTC';
   document.getElementById('kpi-month-usd').textContent = btcPrice>0 ? usd(btcMonth*btcPrice) : '—';
   document.getElementById('kpi-price').textContent     = pFmt;
-
-  // Earnings split cards
-  document.getElementById('ec-h-today').textContent = f4(hydroToday) + ' BTC';
-  document.getElementById('ec-h-month').textContent = f4(hydroMonth) + ' BTC';
-  document.getElementById('ec-s-today').textContent = f4(stdToday)   + ' BTC';
-  document.getElementById('ec-s-month').textContent = f4(stdMonth)   + ' BTC';
-  document.getElementById('ec-t-today').textContent = f4(btcToday)   + ' BTC';
-  document.getElementById('ec-t-month').textContent = f4(btcMonth)   + ' BTC';
-  if(btcPrice>0){
-    document.getElementById('ec-h-usd').textContent = usd(hydroMonth * btcPrice);
-    document.getElementById('ec-s-usd').textContent = usd(stdMonth   * btcPrice);
-    document.getElementById('ec-t-usd').textContent = usd(btcMonth   * btcPrice);
-  }
-
-  // Overview fleet cards
-  document.getElementById('ov-hydro-hr').textContent     = thr(hydroHR);
-  document.getElementById('ov-std-hr').textContent       = thr(stdHR);
-  document.getElementById('ov-hydro-status').textContent = `${hydroOnl}/${HYDRO_N} workers activos · ±3% fluctuación`;
-  document.getElementById('ov-std-status').textContent   = `${stdOnl}/${STD_N} workers activos · ±3% fluctuación`;
-  document.getElementById('ov-h-online').textContent     = `${hydroOnl} / ${HYDRO_N}`;
-  document.getElementById('ov-s-online').textContent     = `${stdOnl} / ${STD_N}`;
-  if(btcPrice>0){
-    document.getElementById('ov-h-usd').textContent  = usd(HYDRO_DAILY_BTC*30*btcPrice);
-    document.getElementById('ov-s-usd').textContent  = usd(STD_DAILY_BTC*30*btcPrice);
-    document.getElementById('ov-usd-month').textContent = usd(TOTAL_DAILY_BTC*30*btcPrice);
-  }
-  document.getElementById('ov-total-hr').textContent = thr(totalHR);
 
   // Hydro / Std fleet tabs
   document.getElementById('hf-hr').textContent     = thr(hydroHR);
