@@ -143,8 +143,8 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
   <nav class="navbar">
     <img src="logo.png" alt="NeuraHash" style="height:160px !important;object-fit:contain;display:block;">
     <div class="nav-pills">
-      <span class="pill" style="border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)">⚡ Hydro: <span id="nav-hydro-hr">11,060</span> TH/s</span>
-      <span class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">22,000</span> TH/s</span>
+      <span id="nav-hydro-pill" class="pill" style="border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)">⚡ Hydro: <span id="nav-hydro-hr">11,060</span> TH/s</span>
+      <span id="nav-std-pill" class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">22,000</span> TH/s</span>
       <span class="pill">248 workers</span>
       <span class="pill">BTC <span id="nav-price" style="margin-left:4px">—</span></span>
       <button class="logout-btn" onclick="logout()">Salir</button>
@@ -458,6 +458,12 @@ async function fetchPrice(){
 // ═══ WORKER GENERATION ═══════════════════════════════════════════
 function genWorkers(){
   function makeFleet(n, baseThs, prefix, seedOffset){
+    if (!POOL_START_DATE) {
+      return Array.from({length:n},(_,i)=>({
+        name:`${prefix}${String(i+1).padStart(prefix==='s19-'?3:2,'0')}`,
+        hr:0, on:false, ls:'—', eff:'—'
+      }));
+    }
     const nOff = Math.random()<.08 ? Math.floor(Math.random()*Math.min(3,n*.02)+1) : 0;
     const offSet = new Set();
     while(offSet.size<nOff) offSet.add(Math.floor(Math.random()*n));
@@ -506,16 +512,27 @@ function renderAll(){
   const activationSub = 'En espera de activación';
 
   // Navbar
-  document.getElementById('nav-hydro-hr').textContent = Math.round(hydroHR).toLocaleString();
-  document.getElementById('nav-std-hr').textContent   = Math.round(stdHR).toLocaleString();
+  if (!poolActive) {
+    document.getElementById('nav-hydro-hr').textContent = '0';
+    document.getElementById('nav-std-hr').textContent   = '0';
+    document.getElementById('nav-hydro-pill').style.cssText = 'border-color:rgba(239,68,68,.3);color:#ef4444;background:rgba(239,68,68,.05)';
+    document.getElementById('nav-std-pill').style.cssText   = 'border-color:rgba(239,68,68,.3);color:#ef4444;background:rgba(239,68,68,.05)';
+  } else {
+    document.getElementById('nav-hydro-hr').textContent = Math.round(hydroHR).toLocaleString();
+    document.getElementById('nav-std-hr').textContent   = Math.round(stdHR).toLocaleString();
+    document.getElementById('nav-hydro-pill').style.cssText = 'border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)';
+    document.getElementById('nav-std-pill').style.cssText   = 'border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)';
+  }
   document.getElementById('nav-price').textContent    = pFmt;
 
   // Hero
   document.getElementById('hero-date').textContent  = now.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
 
   // KPI strip
-  document.getElementById('kpi-hr').textContent        = thr(totalHR);
-  document.getElementById('kpi-workers').textContent   = `${totalOnl} / ${HYDRO_N+STD_N} workers activos`;
+  document.getElementById('kpi-hr').textContent        = poolActive ? thr(totalHR) : '0 TH/s';
+  document.getElementById('kpi-workers').textContent   = poolActive
+    ? `${totalOnl} / ${HYDRO_N+STD_N} workers activos`
+    : `Sin conexión — en espera de activación`;
   document.getElementById('kpi-today').textContent     = f8(btcToday) + ' BTC';
   document.getElementById('kpi-today-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcToday*btcPrice) : '—');
   document.getElementById('kpi-month').textContent     = f8(btcMonth) + ' BTC';
@@ -523,7 +540,7 @@ function renderAll(){
   document.getElementById('kpi-price').textContent     = pFmt;
 
   // Hydro fleet tab KPIs
-  document.getElementById('hf-hr').textContent            = thr(hydroHR);
+  document.getElementById('hf-hr').textContent            = poolActive ? thr(hydroHR) : '0 TH/s';
   document.getElementById('hf-btc-today').textContent     = f8(hydroToday) + ' BTC';
   document.getElementById('hf-btc-month').textContent     = f8(hydroMonth) + ' BTC';
   document.getElementById('hf-btc-today-sub').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(hydroToday*btcPrice) : '—');
@@ -551,7 +568,7 @@ function renderAll(){
   const usdOrDash       = (val) => pEst > 0 ? ' / ' + usd(val*pEst) + ' USD' : '';
 
   // Standard fleet tab KPIs
-  document.getElementById('sf-hr').textContent            = thr(stdHR);
+  document.getElementById('sf-hr').textContent            = poolActive ? thr(stdHR) : '0 TH/s';
   document.getElementById('sf-btc-today').textContent     = f8(stdToday) + ' BTC';
   document.getElementById('sf-btc-month').textContent     = f8(stdMonth) + ' BTC';
   document.getElementById('sf-btc-today-sub').textContent = !poolActive ? activationSub : (p>0 ? usd(stdToday*p) : '—');
