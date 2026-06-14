@@ -144,7 +144,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <img src="logo.png" alt="NeuraHash" style="height:160px !important;object-fit:contain;display:block;">
     <div class="nav-pills">
       <span id="nav-hydro-pill" class="pill" style="border-color:rgba(212,175,55,.3);color:#d4af37;background:rgba(212,175,55,.05)">⚡ Hydro: <span id="nav-hydro-hr">11,060</span> TH/s</span>
-      <span id="nav-std-pill" class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">22,000</span> TH/s</span>
+      <span id="nav-std-pill" class="pill" style="border-color:rgba(34,197,94,.2);color:#22c55e;background:rgba(34,197,94,.06)">● S19: <span id="nav-std-hr">17,000</span> TH/s</span>
       <span class="pill">248 workers</span>
       <span class="pill">BTC <span id="nav-price" style="margin-left:4px">—</span></span>
       <button class="logout-btn" onclick="logout()">Salir</button>
@@ -157,7 +157,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <div class="hero">
       <div class="hero-label">NeuraHash Pool Portal · <span id="hero-date">—</span><span id="timestamp" style="margin-left:16px;color:rgba(255,255,255,.12)"></span></div>
       <h1 class="hero-title">Bienvenido, Grupo Napal S.R.L.</h1>
-      <p class="hero-sub">Flota Hydro (28 × S21 Hydro) + Flota Standard (220 × S19) — 33,060 TH/s base</p>
+      <p class="hero-sub">Flota Hydro (28 × S21 Hydro) + Flota Standard (170 × S19) — 28,060 TH/s base</p>
     </div>
 
     <!-- KPI STRIP -->
@@ -265,7 +265,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <!-- ── STANDARD FLEET ─────────────────────────────────────── -->
     <div id="pane-standard" class="tab-pane" style="margin-top:20px">
       <div class="g4" style="margin-top:0">
-        <div class="kpi-card"><div class="ldot"></div><div class="kpi-label">Hashrate Flota Standard</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">220 × S19 · 100 TH/s</div></div>
+        <div class="kpi-card"><div class="ldot"></div><div class="kpi-label">Hashrate Flota Standard</div><div class="kpi-val cgreen" id="sf-hr">—</div><div class="kpi-sub">170 × S19 · 100 TH/s</div></div>
         <div class="kpi-card"><div class="kpi-label">BTC bruto hoy</div><div class="kpi-val cgreen" id="sf-btc-today">—</div><div class="kpi-sub" id="sf-btc-today-sub">—</div></div>
         <div class="kpi-card"><div class="kpi-label">BTC bruto mes</div><div class="kpi-val cgreen" id="sf-btc-month">—</div><div class="kpi-sub" id="sf-btc-month-sub">—</div></div>
         <div class="kpi-card"><div class="kpi-label">USD equivalente</div><div class="kpi-val cgreen" id="sf-usd">—</div><div class="kpi-sub">BTC mes × precio actual</div></div>
@@ -317,14 +317,14 @@ const HYDRO_DAILY_RATE = 0.000211821;            // BTC per machine per day (upd
 const HYDRO_BASE_DAILY = HYDRO_N * HYDRO_DAILY_RATE;              // 28 × 0.000211821 = 0.005931 BTC/day
 const HYDRO_ENERGIA    = 3864;                   // USD fixed monthly energy
 
-const STD_N            = 220, STD_THS    = 100;
+const STD_N            = 170, STD_THS    = 100;
 const STD_DAILY_RATE   = 0.0000433438;           // BTC per machine per day
-const STD_BASE_DAILY   = STD_N * STD_DAILY_RATE;                  // 220 × 0.0000433438 = 0.009536 BTC/day
+const STD_BASE_DAILY   = STD_N * STD_DAILY_RATE;                  // 170 × 0.0000433438 = 0.007369 BTC/day
 const STD_ENERGIA      = 7500;                   // USD fixed monthly energy
 const STD_PERSONAL     = 3000;                   // USD fixed monthly personnel
 
 const BASE_HR_HYDRO    = HYDRO_N * HYDRO_THS;   // 11,060 TH/s
-const BASE_HR_STD      = STD_N   * STD_THS;     // 22,000 TH/s
+const BASE_HR_STD      = STD_N   * STD_THS;     // 17,000 TH/s
 
 function dailyVariation(seed){
   const d = new Date();
