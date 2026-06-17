@@ -486,27 +486,28 @@ function genWorkers(){
 
 // ═══ STANDARD FLEET DETERMINISTIC HELPERS ════════════════════════
 function toDateStr(d){
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function getTodayStr(){
+  return toDateStr(new Date());
 }
 function getBTCForDate(dateStr){
-  const seed      = parseInt(dateStr.split('-').join(''));
-  const variation = Math.sin(seed) * 0.02;
+  const parts = dateStr.split('-');
+  const seed = parseInt(parts[0]) * 10000 + parseInt(parts[1]) * 100 + parseInt(parts[2]);
+  const variation = Math.sin(seed * 9301 + 49297) * 0.02;
   return STD_REAL_DAILY * (1 + variation);
 }
 function stdDailyHistory(){
   const start   = new Date('2026-06-15T00:00:00');
   const now     = new Date();
   const today   = new Date(now); today.setHours(0,0,0,0);
-  const hourNow = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
   const rows    = [];
   for(let d = new Date(start); d <= today; d.setDate(d.getDate()+1)){
     const ds      = toDateStr(d);
-    const fullBTC = getBTCForDate(ds);
+    const btc     = getBTCForDate(ds);   // purely date-based, never changes on refresh
     const isToday = d.getTime() === today.getTime();
-    // Always show full day BTC — value is stable throughout the day, only changes at midnight
-    const btc     = fullBTC;
-    const isPaid  = !isToday || hourNow >= 21;
-    rows.push({ ds, btc, fullBTC, isToday, isPaid });
+    const isPaid  = !isToday || now.getHours() >= 21;
+    rows.push({ ds, btc, fullBTC: btc, isToday, isPaid });
   }
   return rows;
 }
@@ -533,7 +534,7 @@ function renderAll(){
     // Standard fleet — deterministic per-date values (already net 80%)
     const hist  = stdDailyHistory();
     const todayRow = hist.find(r => r.isToday);
-    stdToday   = todayRow ? todayRow.btc : getBTCForDate(toDateStr(new Date()));
+    stdToday   = todayRow ? todayRow.btc : getBTCForDate(getTodayStr());
     stdMonth   = hist.reduce((a,r) => a + r.btc, 0);
     btcToday   = hydroToday + stdToday;
     btcMonth   = hydroMonth + stdMonth;
