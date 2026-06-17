@@ -190,7 +190,6 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       <button class="tab-btn" onclick="setTab('hydro',this)">Flota Hydro</button>
       <button class="tab-btn" onclick="setTab('standard',this)">Flota Standard</button>
       <button class="tab-btn" onclick="setTab('pagos',this)">Pagos</button>
-      <button class="tab-btn" onclick="setTab('desembolsos',this)">Desembolsos</button>
       <button class="tab-btn" onclick="setTab('gastos',this)">Gastos</button>
     </div>
 
@@ -293,15 +292,9 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
       </div>
     </div>
 
-    <!-- ── PRODUCCIÓN ─────────────────────────────────────────── -->
     <!-- ── PAGOS ──────────────────────────────────────────────── -->
     <div id="pane-pagos" class="tab-pane" style="margin-top:20px">
       <div id="pagos-content"></div>
-    </div>
-
-    <!-- ── DESEMBOLSOS ──────────────────────────────────────────── -->
-    <div id="pane-desembolsos" class="tab-pane" style="margin-top:20px">
-      <div id="desemb-content"></div>
     </div>
 
     <!-- ── GASTOS ──────────────────────────────────────────────── -->
@@ -501,17 +494,17 @@ function getBTCForDate(dateStr){
   return STD_REAL_DAILY * (1 + variation);
 }
 function stdDailyHistory(){
-  const start  = new Date('2026-06-15T00:00:00');
-  const now    = new Date();
-  const today  = new Date(now); today.setHours(0,0,0,0);
+  const start   = new Date('2026-06-15T00:00:00');
+  const now     = new Date();
+  const today   = new Date(now); today.setHours(0,0,0,0);
   const hourNow = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
-  const rows   = [];
+  const rows    = [];
   for(let d = new Date(start); d <= today; d.setDate(d.getDate()+1)){
     const ds      = toDateStr(d);
     const fullBTC = getBTCForDate(ds);
     const isToday = d.getTime() === today.getTime();
-    // 21:00 cutoff: today is partial if hour < 21, full if >= 21
-    const btc     = isToday ? (hourNow < 21 ? fullBTC * (hourNow / 21) : fullBTC) : fullBTC;
+    // Always show full day BTC — value is stable throughout the day, only changes at midnight
+    const btc     = fullBTC;
     const isPaid  = !isToday || hourNow >= 21;
     rows.push({ ds, btc, fullBTC, isToday, isPaid });
   }
@@ -531,11 +524,12 @@ function renderAll(){
     btcToday = btcMonth = btcEOM = 0;
     hydroToday = hydroMonth = stdToday = stdMonth = 0;
   } else {
-    const msElapsed   = Date.now() - new Date(POOL_START_DATE).getTime();
-    const daysElapsed = msElapsed / (1000 * 60 * 60 * 24);
-    const dayFrac     = daysElapsed % 1;
-    hydroToday = HYDRO_DAILY_BTC * Math.min(dayFrac, 1);
-    hydroMonth = HYDRO_DAILY_BTC * Math.min(daysElapsed, 30);
+    // Use integer day counts so values are stable throughout the day (no continuous increment)
+    const poolStart   = new Date(POOL_START_DATE + 'T00:00:00');
+    const todayMid    = new Date(now); todayMid.setHours(0,0,0,0);
+    const daysElapsed = Math.floor((todayMid - poolStart) / (1000 * 60 * 60 * 24)) + 1; // includes today
+    hydroToday = HYDRO_DAILY_BTC;                          // full day estimate — stable until midnight
+    hydroMonth = HYDRO_DAILY_BTC * daysElapsed;
     // Standard fleet — deterministic per-date values (already net 80%)
     const hist  = stdDailyHistory();
     const todayRow = hist.find(r => r.isToday);
@@ -633,39 +627,6 @@ function renderAll(){
     <div class="rd" style="padding-top:10px;border-top:1px solid rgba(255,255,255,.06)"><span class="l">Pacalo (50%)</span><span class="v cgreen">${f8(stdPacaloEst)} BTC${usdOrDash(stdPacaloEst)}</span></div>
     <div class="rd"><span class="l">Allan &amp; Enrique (50%)</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
   `;
-
-  // Desembolsos tab (gated)
-  const desembEl = document.getElementById('desemb-content');
-  if (desembEl) {
-    if (!POOL_START_DATE) {
-      desembEl.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px">
-        <div style="font-size:13px;color:rgba(255,255,255,.3);line-height:1.7">
-          En espera de activación — los desembolsos aparecerán aquí cuando el pool esté activo.</div></div>`;
-    } else {
-      desembEl.innerHTML = `
-        <div class="g2" style="margin-top:0">
-          <div class="kpi-card">
-            <div class="kpi-label">Total Pacalo (Hydro + Standard)</div>
-            <div class="kpi-val cgreen">${f8(totalPacaloEst)} BTC</div>
-            <div class="kpi-sub">${p>0?usd(totalPacaloEst*p):'—'}</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Total Allan &amp; Enrique (Standard)</div>
-            <div class="kpi-val cblue">${f8(stdAllanEst)} BTC</div>
-            <div class="kpi-sub">${p>0?usd(stdAllanEst*p):'—'}</div>
-          </div>
-        </div>
-        <div class="card" style="margin-top:10px">
-          <div class="card-title">Desglose de desembolsos — mes actual</div>
-          <div class="rd"><span class="l">Pacalo — Hydro (35% hosting 20%)</span><span class="v cgreen">${f8(hydroPacaloEst)} BTC${usdOrDash(hydroPacaloEst)}</span></div>
-          <div class="rd"><span class="l">Pacalo — Standard (50% neto)</span><span class="v cgreen">${f8(stdPacaloEst)} BTC${usdOrDash(stdPacaloEst)}</span></div>
-          <div class="rd" style="padding-top:12px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Pacalo</span><span class="v cgreen" style="font-size:15px;font-weight:700">${f8(totalPacaloEst)} BTC${usdOrDash(totalPacaloEst)}</span></div>
-          <div class="rd" style="margin-top:6px"><span class="l">Allan &amp; Enrique — Standard (50%)</span><span class="v cblue">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
-          <div class="rd" style="padding-top:12px;border-top:1px solid rgba(255,255,255,.08)"><span class="l" style="font-weight:600;color:rgba(255,255,255,.6)">Total Allan &amp; Enrique</span><span class="v cblue" style="font-size:15px;font-weight:700">${f8(stdAllanEst)} BTC${usdOrDash(stdAllanEst)}</span></div>
-          <div class="rd" style="margin-top:6px"><span class="l">NeuraHash — Hydro (65% hosting)</span><span class="v cgold">${f8(hydroNHEst)} BTC${usdOrDash(hydroNHEst)}</span></div>
-        </div>`;
-    }
-  }
 
   // Estimaciones tab
   const totalRow = (label, color, btcVal, usdVal) =>
