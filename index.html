@@ -434,25 +434,34 @@ function boot(){
 
 // ═══ BTC PRICE ════════════════════════════════════════════════════
 async function fetchPrice(){
+  function applyPrice(p){
+    if (!(p > 0)) return false;
+    btcPrice = p;
+    const inp = document.getElementById('btcInput'), sld = document.getElementById('btcSlider');
+    if (inp && !manualBtcPrice){ inp.value = Math.round(p); if(sld) sld.value = Math.min(Math.max(Math.round(p),30000),200000); }
+    renderAll();
+    return true;
+  }
+  // CoinGecko
   try{
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-    const d=await r.json();
-    if(d?.bitcoin?.usd>0){
-      btcPrice=d.bitcoin.usd;
-      const inp=document.getElementById('btcInput'), sld=document.getElementById('btcSlider');
-      if(inp&&!manualBtcPrice){inp.value=Math.round(btcPrice);if(sld)sld.value=Math.min(Math.max(Math.round(btcPrice),30000),200000);}
-      return;
-    }
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const d = await r.json();
+    if (applyPrice(d?.bitcoin?.usd)) return;
   }catch{}
+  // mempool.space
   try{
-    const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
-    const d=await r.json();
-    if(Number(d?.price)>0){
-      btcPrice=Number(d.price);
-      const inp=document.getElementById('btcInput'), sld=document.getElementById('btcSlider');
-      if(inp&&!manualBtcPrice){inp.value=Math.round(btcPrice);if(sld)sld.value=Math.min(Math.max(Math.round(btcPrice),30000),200000);}
-    }
+    const r = await fetch('https://mempool.space/api/v1/prices');
+    const d = await r.json();
+    if (applyPrice(d?.USD)) return;
   }catch{}
+  // Binance
+  try{
+    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const d = await r.json();
+    if (applyPrice(Number(d?.price))) return;
+  }catch{}
+  // Hard fallback
+  applyPrice(65000);
 }
 
 // ═══ WORKER GENERATION ═══════════════════════════════════════════
@@ -565,8 +574,8 @@ function renderAll(){
   document.getElementById('kpi-workers').textContent   = poolActive
     ? `${totalOnl} / ${HYDRO_N+STD_N} workers activos`
     : `Sin conexión — en espera de activación`;
-  document.getElementById('kpi-today').textContent     = f8(btcToday) + ' BTC';
-  document.getElementById('kpi-today-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcToday*btcPrice) : '—');
+  document.getElementById('kpi-today').textContent     = f8(stdToday) + ' BTC';
+  document.getElementById('kpi-today-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(stdToday*btcPrice) : '—');
   document.getElementById('kpi-month').textContent     = f8(btcMonth) + ' BTC';
   document.getElementById('kpi-month-usd').textContent = !poolActive ? activationSub : (btcPrice>0 ? usd(btcMonth*btcPrice) : '—');
   document.getElementById('kpi-price').textContent     = pFmt;
