@@ -771,114 +771,63 @@ function renderPagos(){
   const p = getEffectiveBtcPrice();
 
   if (!POOL_START_DATE) {
-    el.innerHTML = `<div class="card" style="text-align:center;padding:48px 24px">
-      <div style="font-size:13px;color:rgba(255,255,255,.3);line-height:1.7">
-        En espera de activación — los registros diarios aparecerán aquí cuando el pool esté activo.
-      </div></div>`;
+    el.innerHTML = '<div class="card" style="text-align:center;padding:48px 24px"><div style="font-size:13px;color:rgba(255,255,255,.3)">En espera de activación — los registros aparecerán aquí cuando el pool esté activo.</div></div>';
     return;
   }
 
-  const now         = new Date();
-  const hist        = stdDailyHistory();          // Jun 15 → today, with 21h cutoff
-  const totalBTC    = hist.reduce((a,r)=>a+r.btc, 0);
-  const daysActive  = hist.length;
-  const lastOfMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const allGastos   = loadGastos();
-  const totalGastos = allGastos.reduce((s,g)=>s+g.amount, 0);
-  const fmtD = ds => { const d=new Date(ds+'T00:00:00'); return d.toLocaleDateString('es-PY',{day:'2-digit',month:'short',year:'2-digit'}); };
-  const uf   = btc => p > 0 ? usd(btc*p) : '—';
-  const hourNow = now.getHours() + now.getMinutes()/60;
+  const hist     = stdDailyHistory();
+  const totalBTC = hist.reduce(function(a,r){ return a + r.btc; }, 0);
+  const uf = function(btc){ return p > 0 ? '$' + Math.round(btc * p).toLocaleString() : '—'; };
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const fmtD = function(ds){
+    var parts = ds.split('-');
+    return parseInt(parts[2]) + ' ' + months[parseInt(parts[1])-1] + ' ' + parts[0];
+  };
 
-  // Monthly groups (standard only)
-  const monthMap = {};
-  for (const r of hist){
-    const d = new Date(r.ds+'T00:00:00');
-    const k = `${d.getFullYear()}-${d.getMonth()}`;
-    if (!monthMap[k]) monthMap[k] = { date: new Date(d.getFullYear(), d.getMonth(), 1), btc: 0, allPaid: true };
-    monthMap[k].btc += r.btc;
-    if (!r.isPaid) monthMap[k].allPaid = false;
+  var rows = '';
+  var reversed = hist.slice().reverse();
+  for (var i = 0; i < reversed.length; i++) {
+    var r = reversed[i];
+    var stColor = r.isPaid ? '#22c55e' : '#f97316';
+    var stText  = r.isPaid ? 'Pagado ✓' : 'En curso ⟳';
+    rows += '<tr>';
+    rows += '<td style="color:rgba(255,255,255,.55)">' + fmtD(r.ds) + '</td>';
+    rows += '<td style="color:#22c55e;font-weight:600">' + Number(r.btc).toFixed(8) + '</td>';
+    rows += '<td style="color:#22c55e">' + uf(r.btc) + '</td>';
+    rows += '<td><span style="color:' + stColor + ';font-size:11px;font-weight:600">' + stText + '</span></td>';
+    rows += '</tr>';
   }
 
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:0">
-      <div class="kpi-card"><div class="ldot"></div>
-        <div class="kpi-label">BTC Standard acumulado</div>
-        <div class="kpi-val cgold">${f4(totalBTC)}</div>
-        <div class="kpi-sub">${uf(totalBTC)}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">USD equivalente</div>
-        <div class="kpi-val cgreen">${uf(totalBTC)}</div>
-        <div class="kpi-sub">Precio ${p>0?'$'+Math.round(p).toLocaleString():'—'}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Días activo</div>
-        <div class="kpi-val">${daysActive}</div>
-        <div class="kpi-sub">Desde 15 jun 2026</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Próximo desembolso</div>
-        <div class="kpi-val cgreen" style="font-size:16px">Día ${lastOfMonth}</div>
-        <div class="kpi-sub">Fin de mes · cierre 21:00</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:10px;padding:0;overflow:visible">
-      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center">
-        <div class="card-title" style="margin-bottom:0">Registro diario — Flota Standard</div>
-        <span style="font-size:10px;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace">Cierre automático 21:00 · base 0.00638769 BTC/día</span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="wtable" style="min-width:500px">
-          <thead><tr>
-            <th>Fecha</th><th>Standard BTC</th><th>USD (en vivo)</th><th>Estado</th><th>Notas</th>
-          </tr></thead>
-          <tbody>
-            ${[...hist].reverse().map((r,i)=>{
-              const dg      = allGastos.filter(g=>g.date===r.ds);
-              const dgTotal = dg.reduce((s,g)=>s+g.amount, 0);
-              const stCol   = r.isPaid ? '#22c55e' : '#f97316';
-              const stTxt   = r.isPaid ? 'Pagado ✓' : `En curso ⟳${r.isToday&&hourNow<21?' (cierre 21:00)':''}`;
-              return `<tr style="${i%2===0?'background:rgba(255,255,255,.015)':''}">
-                <td style="color:rgba(255,255,255,.55)">${fmtD(r.ds)}</td>
-                <td class="cgreen" style="font-weight:600">${f8(r.btc)}</td>
-                <td class="cgreen">${uf(r.btc)}</td>
-                <td><span style="color:${stCol};font-size:11px;font-weight:600">${stTxt}</span></td>
-                <td style="min-width:160px;vertical-align:top;padding-top:8px">
-                  ${dg.map(g=>`<div style="color:#ef4444;font-size:10px;margin-bottom:1px">${g.desc} <span style="opacity:.7">$${Math.round(g.amount)}</span></div>`).join('')}
-                  ${dg.length>0?`<div style="color:#ef4444;font-size:10px;font-weight:700;border-top:1px solid rgba(239,68,68,.2);padding-top:2px;margin-top:2px">$${Math.round(dgTotal).toLocaleString()}</div>`:''}
-                  <div id="gi-form-${r.ds}" style="display:none;margin-top:4px">
-                    <input id="gi-desc-${r.ds}" placeholder="Descripción" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;margin-bottom:3px;font-family:'Inter',sans-serif">
-                    <div style="display:flex;gap:4px">
-                      <input id="gi-amt-${r.ds}" type="number" placeholder="$USD" style="width:70px;background:#0a0a0a;border:1px solid #333;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;font-family:'DM Mono',monospace">
-                      <button onclick="saveGastoInline('${r.ds}')" style="background:#7f1d1d;border:1px solid #ef4444;color:#ef4444;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">✓</button>
-                      <button onclick="toggleGastoForm('${r.ds}')" style="background:#111;border:1px solid #333;color:#666;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer">✕</button>
-                    </div>
-                  </div>
-                  <button onclick="toggleGastoForm('${r.ds}')" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);padding:1px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-top:3px">＋</button>
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">Resumen mensual — Standard</div>
-      <table class="wtable">
-        <thead><tr><th>Mes</th><th>BTC Standard</th><th>USD equiv.</th><th>Estado</th></tr></thead>
-        <tbody>
-          ${Object.values(monthMap).reverse().map(m=>`
-            <tr>
-              <td style="color:rgba(255,255,255,.55)">${m.date.toLocaleDateString('es-PY',{month:'long',year:'numeric'})}</td>
-              <td class="${m.allPaid?'cgreen':'cgold'}">${f4(m.btc)} BTC</td>
-              <td class="${m.allPaid?'cgreen':'cgold'}">${uf(m.btc)}</td>
-              <td>${m.allPaid?'<span style="color:#22c55e;font-size:11px">Pagado ✓</span>':'<span style="color:#d4af37;font-size:11px">En curso</span>'}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">' +
+      '<div class="kpi-card">' +
+        '<div class="kpi-label">BTC Standard acumulado</div>' +
+        '<div class="kpi-val cgold">' + Number(totalBTC).toFixed(4) + '</div>' +
+        '<div class="kpi-sub">' + uf(totalBTC) + '</div>' +
+      '</div>' +
+      '<div class="kpi-card">' +
+        '<div class="kpi-label">Días activo</div>' +
+        '<div class="kpi-val">' + hist.length + '</div>' +
+        '<div class="kpi-sub">Desde 15 jun 2026</div>' +
+      '</div>' +
+      '<div class="kpi-card">' +
+        '<div class="kpi-label">Próximo desembolso</div>' +
+        '<div class="kpi-val cgreen" style="font-size:16px">Fin de mes</div>' +
+        '<div class="kpi-sub">Cierre automático 21:00</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="padding:0;overflow:visible">' +
+      '<div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center">' +
+        '<div class="card-title" style="margin-bottom:0">Registro diario — Flota Standard</div>' +
+        '<span style="font-size:10px;color:rgba(255,255,255,.2);font-family:\'DM Mono\',monospace">Cierre 21:00 · base 0.00638769 BTC/día</span>' +
+      '</div>' +
+      '<div style="overflow-x:auto">' +
+        '<table class="wtable" style="min-width:400px">' +
+          '<thead><tr><th>FECHA</th><th>BTC STANDARD</th><th>USD</th><th>ESTADO</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
 }
 
 // ═══ CHART ENGINE ════════════════════════════════════════════════
