@@ -442,17 +442,17 @@ async function fetchPrice(){
     renderAll();
     return true;
   }
+  // mempool.space — sin restricciones CORS, funciona en GitHub Pages
+  try{
+    const r = await fetch('https://mempool.space/api/v1/prices');
+    const d = await r.json();
+    if (applyPrice(d?.USD)) return;
+  }catch{}
   // CoinGecko
   try{
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
     const d = await r.json();
     if (applyPrice(d?.bitcoin?.usd)) return;
-  }catch{}
-  // mempool.space
-  try{
-    const r = await fetch('https://mempool.space/api/v1/prices');
-    const d = await r.json();
-    if (applyPrice(d?.USD)) return;
   }catch{}
   // Binance
   try{
@@ -540,10 +540,9 @@ function renderAll(){
     const daysElapsed = Math.floor((todayMid - poolStart) / (1000 * 60 * 60 * 24)) + 1; // includes today
     hydroToday = HYDRO_DAILY_BTC;                          // full day estimate — stable until midnight
     hydroMonth = HYDRO_DAILY_BTC * daysElapsed;
-    // Standard fleet — deterministic per-date values (already net 80%)
+    // Standard fleet — purely date-based, never changes on refresh
+    stdToday   = getBTCForDate(getTodayStr());
     const hist  = stdDailyHistory();
-    const todayRow = hist.find(r => r.isToday);
-    stdToday   = todayRow ? todayRow.btc : getBTCForDate(getTodayStr());
     stdMonth   = hist.reduce((a,r) => a + r.btc, 0);
     btcToday   = hydroToday + stdToday;
     btcMonth   = hydroMonth + stdMonth;
