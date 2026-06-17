@@ -198,10 +198,10 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
     <div id="pane-estimaciones" class="tab-pane active" style="margin-top:20px">
       <div style="background:rgba(255,255,255,.03);border:1px solid #333;border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;">
         <span style="color:#555;font-size:11px;letter-spacing:1px;white-space:nowrap">PRECIO BTC</span>
-        <input type="range" id="btcSlider" min="30000" max="200000" step="1000" style="flex:1;accent-color:#d4af37;">
-        <input type="text" id="btcInput" maxlength="7" placeholder="62459" style="width:120px;background:#111;border:1px solid #333;color:#fff;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:700;font-family:'DM Mono',monospace;text-align:right;">
-        <button id="btcLiveBtn" style="padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:#1a2a1a;border:1px solid #22c55e;color:#22c55e;font-family:'Inter',sans-serif;">LIVE</button>
-        <span id="btcModeLabel" style="font-size:10px;color:#555;white-space:nowrap">En tiempo real · CoinGecko</span>
+        <input type="range" id="btcSlider" min="30000" max="200000" step="1000" value="100000" style="flex:1;accent-color:#d4af37;">
+        <input type="text" id="btcInput" maxlength="7" value="100000" style="width:120px;background:#111;border:1px solid #333;color:#fff;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:700;font-family:'DM Mono',monospace;text-align:right;">
+        <button id="btcLiveBtn" style="padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:#111;border:1px solid #555;color:#555;font-family:'Inter',sans-serif;">LIVE</button>
+        <span id="btcModeLabel" style="font-size:10px;color:#d4af37;white-space:nowrap">Modo manual · $100,000</span>
       </div>
       <div class="g2" style="margin-top:0">
         <div class="card" style="border-color:rgba(212,175,55,.3);background:rgba(212,175,55,.02);margin-top:0">
@@ -232,7 +232,7 @@ html,body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:1
         <div id="est-costos"></div>
       </div>
       <p style="font-size:10px;color:rgba(255,255,255,.2);margin-top:16px;line-height:1.7">
-        * Estimaciones basadas en 30.41 días · BTC price actualizado en tiempo real · Producción varía ±2% diario según condiciones del pool
+        * Estimaciones calculadas a $100,000 BTC por defecto. Precio live en el header. Clic en LIVE para usar precio actual. · Producción varía ±2% diario según condiciones del pool
       </p>
     </div>
 
@@ -364,7 +364,7 @@ const TOTAL_DAILY_BTC  = HYDRO_DAILY_BTC  + STD_DAILY_BTC;
 
 // ═══ STATE ════════════════════════════════════════════════════════
 let btcPrice       = 0;
-let manualBtcPrice = null;
+let manualBtcPrice = 100000;
 let hydroW         = [];
 let stdW       = [];
 let hydroHR    = BASE_HR_HYDRO;
@@ -998,7 +998,7 @@ function drawProdChart(){
     manualBtcPrice = val;
     slider.value   = Math.min(Math.max(val, 30000), 200000);
     input.value    = val;
-    modeLabel.textContent    = 'Modo manual';
+    modeLabel.textContent    = 'Modo manual · $' + Math.round(val).toLocaleString();
     modeLabel.style.color    = '#d4af37';
     liveBtn.style.borderColor= '#555';
     liveBtn.style.color      = '#555';
